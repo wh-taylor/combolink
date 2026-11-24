@@ -1,4 +1,5 @@
 from __future__ import annotations
+from types import NotImplementedType
 from unknotter.polynomial import *
 
 Edge = int
@@ -16,8 +17,10 @@ class Diagram:
     def __repr__(self) -> str:
         return f'Diagram({repr(self.pd_code)})'
     
-    def __eq__(self, other: Diagram) -> Diagram:
+    def __eq__(self, other: object) -> bool | NotImplementedType:
         """Check if a diagram is equivalent to another considering orientation."""
+        if not isinstance(other, Diagram):
+            return NotImplemented
         if self.pd_code == other.pd_code: return True
         for n in range(2*len(self.pd_code)):
             if self.shift(n).identical(other):

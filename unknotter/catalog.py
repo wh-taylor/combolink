@@ -1,9 +1,10 @@
 from unknotter.diagram import Diagram, PDNotation
 from itertools import islice
+from pathlib import Path
 
 # Initialize pre-defined prime knot knot diagrams
 _knot_catalog: dict[str, str] = {}
-with open('unknotter/knotinfo.csv') as f:
+with Path(__file__).with_name('knotinfo.csv').open() as f:
     for line in f.readlines():
         parts = line.split(',')
         name, raw_pd = parts[0], parts[1]
@@ -38,7 +39,10 @@ def knot(crossings: int, index: int, alt_status: str = '') -> Diagram:
 KNOTS = ((name, Diagram(_raw_pd_to_pd(value))) for name, value in _knot_catalog.items())
 
 def first_n_knots(n: int) -> list[tuple[str, Diagram]]:
-    return islice(KNOTS, n)
+    return [
+        (name, Diagram(_raw_pd_to_pd(value)))
+        for name, value in islice(_knot_catalog.items(), n)
+    ]
 
 # https://en.m.wikipedia.org/wiki/File:Thistlethwaite_unknot.svg
 THISTLETHWAITE_UNKNOT = Diagram([
