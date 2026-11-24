@@ -1,7 +1,7 @@
 from tests.__init__ import *
 
 
-HOPF_LINK = Diagram(
+HOPF_LINK = LinkDiagram(
     [
         (1, 4, 2, 3),
         (3, 2, 4, 1),
@@ -52,7 +52,7 @@ def test_pokes_between_link_components_preserve_components_and_can_be_undone(
 
 
 def test_slides_preserve_components_using_single_crossing_unknots():
-    diagram = Diagram(
+    diagram = LinkDiagram(
         [
             (8, 1, 9, 2),
             (2, 9, 3, 10),
@@ -77,11 +77,11 @@ def test_infinity_unknots_have_no_untwistables():
         [(2, 2, 1, 1)],
         [(1, 1, 2, 2)],
     ):
-        assert get_untwistables(Diagram(pd_code)) == []
+        assert get_untwistables(LinkDiagram(pd_code)) == []
 
 
 def test_one_crossing_unknot_untwist_is_a_no_op():
-    unknot = Diagram([(1, 2, 2, 1)])
+    unknot = LinkDiagram([(1, 2, 2, 1)])
 
     for edge in (1, 2):
         simplified = untwist(unknot, edge)

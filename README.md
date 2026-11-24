@@ -57,7 +57,7 @@ You can also create a diagram directly from its PD code, a list of four-edge
 crossings:
 
 ```python
-hopf_link = cl.Diagram([
+hopf_link = cl.LinkDiagram([
     (1, 4, 2, 3),
     (3, 2, 4, 1),
 ])
@@ -67,8 +67,8 @@ if hopf_link.is_valid():
     print(cl.jones(hopf_link).var("t"))
 ```
 
-Diagram edge IDs are integers. Check `is_valid()` before computing properties;
-property functions raise `ValueError` for invalid diagrams.
+Edge IDs in a link diagram are integers. Check `is_valid()` before computing
+properties; property functions raise `ValueError` for invalid diagrams.
 
 ## Working with diagrams
 

@@ -2,7 +2,7 @@ from itertools import islice
 from math import gcd
 from pathlib import Path
 
-from combolink.diagram import Diagram, Edge, PDNotation
+from combolink.diagram import LinkDiagram, Edge, PDNotation
 
 # Load the catalog of predefined prime knot diagrams.
 _knot_catalog: dict[str, str] = {}
@@ -37,7 +37,7 @@ def _raw_pd_to_pd(raw_pd: str) -> PDNotation:
     return pd_code
 
 
-def knot(crossings: int, index: int, alt_status: str = "") -> Diagram:
+def knot(crossings: int, index: int, alt_status: str = "") -> LinkDiagram:
     """Look up a prime knot diagram in the bundled catalog.
 
     Parameters
@@ -52,7 +52,7 @@ def knot(crossings: int, index: int, alt_status: str = "") -> Diagram:
 
     Returns
     -------
-    Diagram
+    LinkDiagram
         The knot diagram associated with the requested catalog entry.
 
     Raises
@@ -77,7 +77,7 @@ def knot(crossings: int, index: int, alt_status: str = "") -> Diagram:
     except KeyError:
         raise KeyError(f"knot {name} does not exist.")
 
-    return Diagram(_raw_pd_to_pd(raw_pd))
+    return LinkDiagram(_raw_pd_to_pd(raw_pd))
 
 
 def _relabel_oriented_pd_code(pd_code: PDNotation) -> PDNotation:
@@ -150,7 +150,7 @@ def _validate_torus_parameters(p: int, q: int) -> None:
         raise ValueError("p and q must be positive integers.")
 
 
-def _generate_torus_link_diagram(p: int, q: int) -> Diagram:
+def _generate_torus_link_diagram(p: int, q: int) -> LinkDiagram:
     """Generate an oriented PD diagram for the positive torus link T(p, q).
 
     Parameters
@@ -160,11 +160,11 @@ def _generate_torus_link_diagram(p: int, q: int) -> Diagram:
 
     Returns
     -------
-    Diagram
+    LinkDiagram
         A diagram with ``gcd(p, q)`` components.
     """
     if p == 1 or q == 1:
-        return Diagram([(1, 2, 2, 1)])
+        return LinkDiagram([(1, 2, 2, 1)])
 
     strand_count = min(p, q)
     repetitions = max(p, q)
@@ -192,13 +192,13 @@ def _generate_torus_link_diagram(p: int, q: int) -> Diagram:
         )
         for first, second, third, fourth in crossings
     ]
-    diagram = Diagram(_relabel_oriented_pd_code(closed_crossings))
+    diagram = LinkDiagram(_relabel_oriented_pd_code(closed_crossings))
     if not diagram.is_valid() or diagram.n_components != gcd(p, q):
         raise RuntimeError("could not generate a valid torus link diagram.")
     return diagram
 
 
-def torus_link(p: int, q: int) -> Diagram:
+def torus_link(p: int, q: int) -> LinkDiagram:
     """Generate the positive torus link T(p, q).
 
     Parameters
@@ -209,7 +209,7 @@ def torus_link(p: int, q: int) -> Diagram:
 
     Returns
     -------
-    Diagram
+    LinkDiagram
         An oriented PD diagram of the torus link.
 
     Raises
@@ -221,7 +221,7 @@ def torus_link(p: int, q: int) -> Diagram:
     return _generate_torus_link_diagram(p, q)
 
 
-def torus_knot(p: int, q: int) -> Diagram:
+def torus_knot(p: int, q: int) -> LinkDiagram:
     """Generate the positive torus knot T(p, q).
 
     Parameters
@@ -231,7 +231,7 @@ def torus_knot(p: int, q: int) -> Diagram:
 
     Returns
     -------
-    Diagram
+    LinkDiagram
         An oriented PD diagram of the torus knot.
 
     Raises
@@ -247,10 +247,10 @@ def torus_knot(p: int, q: int) -> Diagram:
 
 
 # Generator of all prime knot diagrams in the catalog.
-PRIME_KNOTS = ((name, Diagram(_raw_pd_to_pd(value))) for name, value in _knot_catalog.items())
+PRIME_KNOTS = ((name, LinkDiagram(_raw_pd_to_pd(value))) for name, value in _knot_catalog.items())
 
 
-def first_n_knots(n: int) -> list[tuple[str, Diagram]]:
+def first_n_knots(n: int) -> list[tuple[str, LinkDiagram]]:
     """Return the first ``n`` entries from the prime-knot catalog.
 
     Parameters
@@ -260,7 +260,7 @@ def first_n_knots(n: int) -> list[tuple[str, Diagram]]:
 
     Returns
     -------
-    list of tuple of str and Diagram
+    list of tuple of str and LinkDiagram
         Catalog names paired with freshly constructed knot diagrams.
 
     Raises
@@ -269,13 +269,13 @@ def first_n_knots(n: int) -> list[tuple[str, Diagram]]:
         If ``n`` is negative.
     """
     return [
-        (name, Diagram(_raw_pd_to_pd(value)))
+        (name, LinkDiagram(_raw_pd_to_pd(value)))
         for name, value in islice(_knot_catalog.items(), n)
     ]
 
 
 # https://en.m.wikipedia.org/wiki/File:Thistlethwaite_unknot.svg
-THISTLETHWAITE_UNKNOT = Diagram(
+THISTLETHWAITE_UNKNOT = LinkDiagram(
     [
         (22, 2, 23, 1),
         (3, 27, 4, 26),
@@ -296,7 +296,7 @@ THISTLETHWAITE_UNKNOT = Diagram(
 )
 
 # https://en.m.wikipedia.org/wiki/File:Ochiai_unknot.svg
-OCHIAI_UNKNOT = Diagram(
+OCHIAI_UNKNOT = LinkDiagram(
     [
         (12, 2, 13, 1),
         (3, 6, 4, 7),

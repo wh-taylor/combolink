@@ -2,13 +2,13 @@ from itertools import product
 from combolink.diagram import *
 
 
-def _require_valid_diagram(self: Diagram) -> None:
+def _require_valid_diagram(self: LinkDiagram) -> None:
     """Raise an error unless ``self`` is a structurally valid diagram.
 
     Parameters
     ----------
-    self : Diagram
-        Diagram to validate.
+    self : LinkDiagram
+        LinkDiagram to validate.
 
     Raises
     ------
@@ -19,13 +19,13 @@ def _require_valid_diagram(self: Diagram) -> None:
         raise ValueError("cannot compute link properties for an invalid diagram.")
 
 
-def gauss_code(self: Diagram) -> list[int]:
+def gauss_code(self: LinkDiagram) -> list[int]:
     """Return the Gauss code of a diagram.
 
     Parameters
     ----------
-    self : Diagram
-        Diagram to encode.
+    self : LinkDiagram
+        LinkDiagram to encode.
 
     Returns
     -------
@@ -39,13 +39,13 @@ def gauss_code(self: Diagram) -> list[int]:
     """
     raise NotImplementedError
 
-def dt_notation(self: Diagram) -> list[int]:
+def dt_notation(self: LinkDiagram) -> list[int]:
     """Return the Dowker-Thistlethwaite notation of a diagram.
 
     Parameters
     ----------
-    self : Diagram
-        Diagram to encode.
+    self : LinkDiagram
+        LinkDiagram to encode.
 
     Returns
     -------
@@ -59,13 +59,13 @@ def dt_notation(self: Diagram) -> list[int]:
     """
     raise NotImplementedError
 
-def kauffman_bracket(self: Diagram) -> Polynomial:
+def kauffman_bracket(self: LinkDiagram) -> Polynomial:
     """Compute the Kauffman bracket polynomial of a diagram.
 
     Parameters
     ----------
-    self : Diagram
-        Diagram whose bracket is computed.
+    self : LinkDiagram
+        LinkDiagram whose bracket is computed.
 
     Returns
     -------
@@ -78,7 +78,7 @@ def kauffman_bracket(self: Diagram) -> Polynomial:
         If ``self`` is not a valid diagram.
     """
     _require_valid_diagram(self)
-    if self == Diagram([(1, 1, 2, 2)]): return Polynomial({3: -1})
+    if self == LinkDiagram([(1, 1, 2, 2)]): return Polynomial({3: -1})
 
     factored_poly = [(((a, d), (b, c)), ((a, b), (c, d))) for a, b, c, d in self.pd_code]
 
@@ -123,13 +123,13 @@ def kauffman_bracket(self: Diagram) -> Polynomial:
 
     return sum((Polynomial({power1: 1}) * disjoint_unknot_poly**power2 for power1, power2 in newlist), Polynomial.zero())
 
-def get_writhe(self: Diagram) -> int:
+def get_writhe(self: LinkDiagram) -> int:
     """Compute the writhe of an oriented diagram.
 
     Parameters
     ----------
-    self : Diagram
-        Diagram whose crossing signs are summed.
+    self : LinkDiagram
+        LinkDiagram whose crossing signs are summed.
 
     Returns
     -------
@@ -150,13 +150,13 @@ def get_writhe(self: Diagram) -> int:
             writhe += 1
     return writhe
 
-def jones(self: Diagram) -> Polynomial:
+def jones(self: LinkDiagram) -> Polynomial:
     """Compute the Jones polynomial of a diagram.
 
     Parameters
     ----------
-    self : Diagram
-        Diagram whose Jones polynomial is computed.
+    self : LinkDiagram
+        LinkDiagram whose Jones polynomial is computed.
 
     Returns
     -------
@@ -174,13 +174,13 @@ def jones(self: Diagram) -> Polynomial:
     coefficients = {powers[0]/4: coefficients for powers, coefficients in raw_jones_polynomial.coefficients.items()}
     return Polynomial(coefficients)
 
-def get_edges(self: Diagram) -> list[Edge]:
+def get_edges(self: LinkDiagram) -> list[Edge]:
     """Return the edge labels used by a diagram.
 
     Parameters
     ----------
-    self : Diagram
-        Diagram whose edge labels are enumerated.
+    self : LinkDiagram
+        LinkDiagram whose edge labels are enumerated.
 
     Returns
     -------
@@ -189,13 +189,13 @@ def get_edges(self: Diagram) -> list[Edge]:
     """
     return [i + 1 for i in range(2 * len(self.pd_code))]
 
-def is_infinity_unknot(self: Diagram) -> bool:
+def is_infinity_unknot(self: LinkDiagram) -> bool:
     """Check whether ``self`` uses a recognized one-crossing unknot encoding.
 
     Parameters
     ----------
-    self : Diagram
-        Diagram to check.
+    self : LinkDiagram
+        LinkDiagram to check.
 
     Returns
     -------
@@ -203,15 +203,15 @@ def is_infinity_unknot(self: Diagram) -> bool:
         Whether the diagram matches either of the library's one-crossing
         unknot encodings, up to cyclic edge-label shifts.
     """
-    return self == Diagram([(1, 2, 2, 1)]) or self == Diagram([(2, 2, 1, 1)])
+    return self == LinkDiagram([(1, 2, 2, 1)]) or self == LinkDiagram([(2, 2, 1, 1)])
 
-def get_plaintext_code(self: Diagram) -> str:
+def get_plaintext_code(self: LinkDiagram) -> str:
     """Serialize a diagram as a compact semicolon-delimited PD code.
 
     Parameters
     ----------
-    self : Diagram
-        Diagram to serialize.
+    self : LinkDiagram
+        LinkDiagram to serialize.
 
     Returns
     -------

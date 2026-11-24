@@ -1,50 +1,50 @@
 from combolink.diagram import *
 
 
-def reverse(self: Diagram) -> Diagram:
+def reverse(self: LinkDiagram) -> LinkDiagram:
     """Reverse the orientation of a diagram.
 
     Parameters
     ----------
-    self : Diagram
-        Diagram to reverse.
+    self : LinkDiagram
+        LinkDiagram to reverse.
 
     Returns
     -------
-    Diagram
+    LinkDiagram
         A diagram with the opposite orientation.
     """
-    return Diagram([(d, c, b, a) for (a, b, c, d) in self.pd_code])
+    return LinkDiagram([(d, c, b, a) for (a, b, c, d) in self.pd_code])
 
 
-def reflect(self: Diagram) -> Diagram:
+def reflect(self: LinkDiagram) -> LinkDiagram:
     """Reflect a diagram, producing its mirror image.
 
     Parameters
     ----------
-    self : Diagram
-        Diagram to reflect.
+    self : LinkDiagram
+        LinkDiagram to reflect.
 
     Returns
     -------
-    Diagram
+    LinkDiagram
         A diagram of the reflected link.
     """
-    return Diagram([(a, d, c, b) for (a, b, c, d) in self.pd_code])
+    return LinkDiagram([(a, d, c, b) for (a, b, c, d) in self.pd_code])
 
-def disjoint_union(self, *others: Diagram):
+def disjoint_union(self, *others: LinkDiagram):
     """Return the disjoint union of this diagram and any additional diagrams.
 
     Parameters
     ----------
-    self : Diagram
+    self : LinkDiagram
         First diagram in the union.
-    *others : Diagram
+    *others : LinkDiagram
         Additional diagrams to include.
 
     Returns
     -------
-    Diagram
+    LinkDiagram
         A diagram containing all input components as a disjoint union.
 
     Raises
@@ -57,17 +57,17 @@ def disjoint_union(self, *others: Diagram):
         result = _disjoint_union(result, other)
     return result
 
-def _disjoint_union(self: Diagram, other: Diagram) -> Diagram:
+def _disjoint_union(self: LinkDiagram, other: LinkDiagram) -> LinkDiagram:
     """Combine two valid diagrams without joining their components.
 
     Parameters
     ----------
-    self, other : Diagram
+    self, other : LinkDiagram
         Diagrams to combine.
 
     Returns
     -------
-    Diagram
+    LinkDiagram
         Their disjoint union with non-overlapping edge labels.
 
     Raises
@@ -79,18 +79,18 @@ def _disjoint_union(self: Diagram, other: Diagram) -> Diagram:
         raise ValueError("cannot combine invalid diagrams.")
 
     other_shifted = other._shift_unbounded(2 * len(self.pd_code))
-    return Diagram(self.pd_code + other_shifted.pd_code)
+    return LinkDiagram(self.pd_code + other_shifted.pd_code)
 
 
 def _head_occurrences(
-    diagram: Diagram, edge_shift: int, crossing_shift: int
+    diagram: LinkDiagram, edge_shift: int, crossing_shift: int
 ) -> dict[Edge, tuple[int, int]]:
     """Locate the forward-facing crossing occurrence of every edge.
 
     Parameters
     ----------
-    diagram : Diagram
-        Diagram whose edges are located.
+    diagram : LinkDiagram
+        LinkDiagram whose edges are located.
     edge_shift : int
         Offset applied to the edge keys.
     crossing_shift : int
@@ -120,14 +120,14 @@ def _head_occurrences(
 
 
 def _forward_occurrences(
-    diagram: Diagram, edge: Edge, crossing_shift: int = 0
+    diagram: LinkDiagram, edge: Edge, crossing_shift: int = 0
 ) -> list[tuple[int, int]]:
     """Find all crossing ports where ``edge`` faces its next edge.
 
     Parameters
     ----------
-    diagram : Diagram
-        Diagram containing the edge.
+    diagram : LinkDiagram
+        LinkDiagram containing the edge.
     edge : Edge
         Edge whose forward-facing occurrences are found.
     crossing_shift : int, default=0
@@ -154,7 +154,7 @@ def _build_joined_candidate(
     shifted_other_edge: Edge,
     self_head: tuple[int, int],
     other_head: tuple[int, int],
-) -> Diagram | None:
+) -> LinkDiagram | None:
     """Build and validate a candidate diagram formed by splicing edge cycles.
 
     Parameters
@@ -170,7 +170,7 @@ def _build_joined_candidate(
 
     Returns
     -------
-    Diagram or None
+    LinkDiagram or None
         The joined diagram if this splice produces valid oriented edge cycles;
         otherwise, ``None``.
     """
@@ -222,7 +222,7 @@ def _build_joined_candidate(
         )
         for a, b, c, d in pd_code
     ]
-    joined = Diagram(joined_code)
+    joined = LinkDiagram(joined_code)
     if not joined.is_valid():
         return None
     try:
@@ -233,19 +233,19 @@ def _build_joined_candidate(
     return joined
 
 
-def connected_sum(self: Diagram, *others: Diagram) -> Diagram:
+def connected_sum(self: LinkDiagram, *others: LinkDiagram) -> LinkDiagram:
     """Return the connected sum of this knot and any additional knot diagrams.
 
     Parameters
     ----------
-    self : Diagram
+    self : LinkDiagram
         First knot diagram in the sum.
-    *others : Diagram
+    *others : LinkDiagram
         Additional knot diagrams to sum.
 
     Returns
     -------
-    Diagram
+    LinkDiagram
         The resulting connected-sum diagram.
 
     Raises
@@ -258,17 +258,17 @@ def connected_sum(self: Diagram, *others: Diagram) -> Diagram:
         result = _connected_sum(result, other)
     return result
 
-def _connected_sum(self: Diagram, other: Diagram) -> Diagram:
+def _connected_sum(self: LinkDiagram, other: LinkDiagram) -> LinkDiagram:
     """Join two valid one-component diagrams.
 
     Parameters
     ----------
-    self, other : Diagram
+    self, other : LinkDiagram
         Knot diagrams to join.
 
     Returns
     -------
-    Diagram
+    LinkDiagram
         Their connected sum.
 
     Raises
@@ -283,19 +283,19 @@ def _connected_sum(self: Diagram, other: Diagram) -> Diagram:
 
     return join(self, other, self.components[0][0], other.components[0][0])
 
-def join(self: Diagram, other: Diagram, self_edge: Edge, other_edge: Edge) -> Diagram:
+def join(self: LinkDiagram, other: LinkDiagram, self_edge: Edge, other_edge: Edge) -> LinkDiagram:
     """Join the components containing two selected edges.
 
     Parameters
     ----------
-    self, other : Diagram
+    self, other : LinkDiagram
         Diagrams to join.
     self_edge, other_edge : Edge
         Edge labels identifying the components to join.
 
     Returns
     -------
-    Diagram
+    LinkDiagram
         A diagram in which the selected components have been joined.
 
     Raises

@@ -12,16 +12,16 @@ def test_figure8_bracket():
 
 
 def test_two_component_unlink_bracket():
-    unlink = Diagram([(1, 2, 2, 1), (3, 4, 4, 3)])
+    unlink = LinkDiagram([(1, 2, 2, 1), (3, 4, 4, 3)])
 
     assert kauffman_bracket(unlink) == Polynomial({4: -1, 8: -1})
 
 
 def test_link_properties_reject_an_empty_pd_code():
     with pytest.raises(ValueError, match="invalid diagram"):
-        kauffman_bracket(Diagram([]))
+        kauffman_bracket(LinkDiagram([]))
     with pytest.raises(ValueError, match="invalid diagram"):
-        get_writhe(Diagram([]))
+        get_writhe(LinkDiagram([]))
 
 
 def test_trefoil_preserve_poke():

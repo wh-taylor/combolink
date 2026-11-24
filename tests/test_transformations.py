@@ -1,9 +1,9 @@
 import pytest
 
-from combolink import Diagram, connected_sum, disjoint_union, join, knot
+from combolink import LinkDiagram, connected_sum, disjoint_union, join, knot
 
 
-HOPF_LINK = Diagram([(1, 4, 2, 3), (3, 2, 4, 1)])
+HOPF_LINK = LinkDiagram([(1, 4, 2, 3), (3, 2, 4, 1)])
 
 
 def test_disjoint_union_relabels_edges_and_preserves_components():

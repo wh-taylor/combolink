@@ -2,7 +2,7 @@ import pytest
 
 from combolink import Move, MoveKind, apply_move, get_moves, transitions
 from combolink.catalog import knot
-from combolink.diagram import Diagram
+from combolink.diagram import LinkDiagram
 
 
 def test_moves_are_deterministic_and_transitions_apply_them():
@@ -43,7 +43,7 @@ def test_moves_and_move_kinds_have_readable_representations():
 
 def test_apply_move_rejects_invalid_diagram_and_out_of_range_edges():
     with pytest.raises(ValueError, match="invalid diagram"):
-        apply_move(Diagram([]), Move(MoveKind.UNTWIST, (1,)))
+        apply_move(LinkDiagram([]), Move(MoveKind.UNTWIST, (1,)))
 
     with pytest.raises(ValueError, match="belong to the diagram"):
         apply_move(knot(3, 1), Move(MoveKind.UNTWIST, (7,)))

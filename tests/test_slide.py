@@ -2,13 +2,13 @@ from tests.__init__ import *
 
 
 def test_fake_trefoil_slide():
-    fake_trefoil = Diagram([(4, 1, 5, 2), (5, 3, 6, 2), (6, 3, 1, 4)])
-    target = Diagram([(3, 2, 4, 3), (5, 4, 6, 5), (6, 2, 1, 1)])
+    fake_trefoil = LinkDiagram([(4, 1, 5, 2), (5, 3, 6, 2), (6, 3, 1, 4)])
+    target = LinkDiagram([(3, 2, 4, 3), (5, 4, 6, 5), (6, 2, 1, 1)])
     assert slide(fake_trefoil, 2, 4, 6) == target
 
 
 def test_unknot1_slide():
-    unknot1 = Diagram(
+    unknot1 = LinkDiagram(
         [
             (8, 1, 9, 2),
             (2, 9, 3, 10),
@@ -18,7 +18,7 @@ def test_unknot1_slide():
             (6, 12, 7, 11),
         ]
     )
-    target = Diagram(
+    target = LinkDiagram(
         [
             (8, 1, 9, 2),
             (2, 9, 3, 10),
@@ -32,7 +32,7 @@ def test_unknot1_slide():
 
 
 def test_unknot2_slide():
-    unknot2 = Diagram(
+    unknot2 = LinkDiagram(
         [
             (2, 11, 3, 12),
             (3, 8, 4, 9),
@@ -42,7 +42,7 @@ def test_unknot2_slide():
             (7, 10, 8, 11),
         ]
     )
-    target = Diagram(
+    target = LinkDiagram(
         [
             (1, 10, 2, 11),
             (3, 8, 4, 9),

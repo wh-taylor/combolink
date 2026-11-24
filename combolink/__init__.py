@@ -9,7 +9,7 @@ from .catalog import (
 )
 from .diagram import (
     Crossing,
-    Diagram,
+    LinkDiagram,
     Edge,
     PDNotation,
     ReidemeisterError,
@@ -53,7 +53,7 @@ from .transformations import connected_sum, disjoint_union, join, reflect, rever
 
 __all__ = [
     "Crossing",
-    "Diagram",
+    "LinkDiagram",
     "Edge",
     "PRIME_KNOTS",
     "Move",

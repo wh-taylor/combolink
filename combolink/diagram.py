@@ -12,7 +12,7 @@ class ReidemeisterError(Exception):
 
     pass
 
-class Diagram:
+class LinkDiagram:
     """A link diagram represented by planar-diagram (PD) crossings.
 
     Each crossing is a four-edge tuple. Edge labels identify arcs between
@@ -35,9 +35,9 @@ class Diagram:
         Returns
         -------
         str
-            The diagram represented as ``Diagram(pd_code)``.
+            The diagram represented as ``LinkDiagram(pd_code)``.
         """
-        return f'Diagram({repr(self.pd_code)})'
+        return f'LinkDiagram({repr(self.pd_code)})'
     
     def __eq__(self, other: object) -> bool | NotImplementedType:
         """Compare diagrams up to cyclic edge-label shifts.
@@ -54,7 +54,7 @@ class Diagram:
             allowing cyclic shifts of edge labels. Returns ``NotImplemented``
             for values that are not diagrams.
         """
-        if not isinstance(other, Diagram):
+        if not isinstance(other, LinkDiagram):
             return NotImplemented
         if not self.is_valid() or not other.is_valid():
             return False
@@ -73,7 +73,7 @@ class Diagram:
                 return component[(index + n) % len(component)]
         raise ValueError(f"edge {edge} does not belong to this diagram.")
 
-    def shift(self, n: int) -> Diagram:
+    def shift(self, n: int) -> LinkDiagram:
         """Cyclically shift edge labels within their oriented components.
 
         Parameters
@@ -84,7 +84,7 @@ class Diagram:
 
         Returns
         -------
-        Diagram
+        LinkDiagram
             A new diagram with the shifted edge labels.
 
         Raises
@@ -92,20 +92,20 @@ class Diagram:
         ValueError
             If this diagram is invalid.
         """
-        return Diagram(
+        return LinkDiagram(
             [
                 tuple(self._shiftmod(edge, n) for edge in crossing)
                 for crossing in self.pd_code
             ]
         )
 
-    def identical(self, other: Diagram) -> bool:
+    def identical(self, other: LinkDiagram) -> bool:
         """Check whether two diagrams have identical PD crossings.
 
         Parameters
         ----------
-        other : Diagram
-            Diagram to compare with this one.
+        other : LinkDiagram
+            LinkDiagram to compare with this one.
 
         Returns
         -------
@@ -251,12 +251,12 @@ class Diagram:
 
         return (next(i for i, row in enumerate(self.pd_code) if row == crossings_with_edge[0]), next(i for i, x in enumerate(crossings_with_edge[0]) if x == edge))
 
-    def _shift_unbounded(self, n: int) -> Diagram:
+    def _shift_unbounded(self, n: int) -> LinkDiagram:
         """Return a diagram with all of its edge values shifted up by `n` without wrapping around.
 
         This method is meant for adjusting a diagram to be combined with another.
         """
-        return Diagram([tuple(edge + n for edge in crossing) for crossing in self.pd_code])
+        return LinkDiagram([tuple(edge + n for edge in crossing) for crossing in self.pd_code])
 
     def _index_is_facing(self, crossing_index: int, edge_index: int) -> bool:
         """Returns whether or not the given index represents an edge that is facing its crossing."""
