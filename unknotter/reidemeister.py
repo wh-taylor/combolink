@@ -2,7 +2,7 @@ import math
 import random
 import time
 from unknotter.diagram import *
-from unknotter.properties import get_edges, is_infinity_unknot, _is_valid
+from unknotter.properties import get_edges, is_infinity_unknot
 
 def _is_unpokable(self: Diagram, edge1: Edge, edge2: Edge) -> bool:
     return any((
@@ -329,7 +329,10 @@ def slide(self: Diagram, edge1: Edge, edge2: Edge, edge3: Edge) -> Diagram:
 
     return Diagram(pd_code)
 
-def apply_random_move(self: Diagram, beta: float) -> Diagram:
+def apply_random_move(
+    self: Diagram, beta: float, rng: random.Random | None = None
+) -> Diagram:
+    choose = random.choices if rng is None else rng.choices
     numerical_weights: list[float] = [
         math.e**-beta,
         math.e**beta,
@@ -348,13 +351,13 @@ def apply_random_move(self: Diagram, beta: float) -> Diagram:
 
     weights = [0 if len(l) == 0 else w for w, l in zip(numerical_weights, options)]
 
-    move_decision = random.choices([1, 2, 3, 4, 5], weights=weights)[0]
+    move_decision = choose([1, 2, 3, 4, 5], weights=weights)[0]
 
     try:
         match move_decision:
             case 1:
-                edge = random.choices(twistables)[0]
-                twist_decision = random.choices([1, 2, 3, 4])[0]
+                edge = choose(twistables)[0]
+                twist_decision = choose([1, 2, 3, 4])[0]
                 match twist_decision:
                     case 1:
                         return left_positive_twist(self, edge)
@@ -365,19 +368,19 @@ def apply_random_move(self: Diagram, beta: float) -> Diagram:
                     case 4:
                         return right_negative_twist(self, edge)
             case 2:
-                edge = random.choices(untwistables)[0]
+                edge = choose(untwistables)[0]
                 return untwist(self, edge)
             case 3:
-                edges = random.choices(pokables)[0]
+                edges = choose(pokables)[0]
                 return poke(self, *edges)
             case 4:
-                edges = random.choices(unpokables)[0]
+                edges = choose(unpokables)[0]
                 return unpoke(self, *edges)
             case 5:
-                edges = random.choices(slidables)[0]
+                edges = choose(slidables)[0]
                 return slide(self, *edges)
     except NotImplementedError:
-        return apply_random_move(self, beta)
+        return apply_random_move(self, beta, rng)
 
 def randomeister(self: Diagram, moves: int, beta: float, show: bool = False) -> list[Diagram]:
     diagrams: list[Diagram] = [self]
@@ -395,7 +398,7 @@ def unknot_solver(self: Diagram, beta: float):
     while len(diagram.pd_code) > 2:
         diagram = apply_random_move(diagram, beta)
         # print(len(diagram.pd_code), end=', ')
-        assert _is_valid(diagram)
+        assert diagram.is_valid()
         i += 1
 
         if i > 2000:

@@ -40,6 +40,18 @@ class Diagram:
         if len(self.pd_code) != len(other.pd_code): return False
         return set(self.pd_code) == set(other.pd_code)
 
+    def is_valid(self) -> bool:
+        """Return whether the PD code has four valid edge occurrences per crossing."""
+        edge_counts = [0] * (2 * len(self.pd_code))
+        for crossing in self.pd_code:
+            if not isinstance(crossing, (tuple, list)) or len(crossing) != 4:
+                return False
+            for edge in crossing:
+                if type(edge) is not int or not 1 <= edge <= len(edge_counts):
+                    return False
+                edge_counts[edge - 1] += 1
+        return all(count == 2 for count in edge_counts)
+
     def _get_crossings_with_edge(self, edge: Edge) -> list[Crossing]:
         """Get a list of all crossings that are adjacent to a given edge."""
         return [crossing for crossing in self.pd_code if edge in crossing]

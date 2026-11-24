@@ -81,20 +81,6 @@ def get_edges(self: Diagram) -> list[Edge]:
 def is_infinity_unknot(self: Diagram) -> bool:
     return self == Diagram([(1, 2, 2, 1)]) or self == Diagram([(2, 2, 1, 1)])
 
-def _is_valid(self: Diagram) -> bool:
-    edges = get_edges(self)
-    for crossing in self.pd_code:
-        for edge in crossing:
-            if edge not in edges:
-                return False
-    for edge in edges:
-        edge_count = 0
-        for crossing in self.pd_code:
-            edge_count += crossing.count(edge)
-        if edge_count != 2:
-            return False
-    return True
-
 def get_plaintext_code(self: Diagram) -> str:
     output = '['
     for i, (a, b, c, d) in enumerate(self.pd_code):
