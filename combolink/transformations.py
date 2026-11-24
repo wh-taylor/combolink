@@ -121,7 +121,14 @@ def _build_joined_candidate(
     return joined
 
 
-def connected_sum(self: Diagram, other: Diagram) -> Diagram:
+def connected_sum(self: Diagram, *others: Diagram) -> Diagram:
+    """Return the connected sum of any number of knot diagrams."""
+    result = self
+    for other in others:
+        result = _connected_sum(result, other)
+    return result
+
+def _connected_sum(self: Diagram, other: Diagram) -> Diagram:
     """Return the connected sum of two knot diagrams."""
     if not self.is_valid() or not other.is_valid():
         raise ValueError("cannot combine invalid diagrams.")
