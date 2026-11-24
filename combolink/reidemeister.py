@@ -1,6 +1,6 @@
-from collections.abc import Iterator as _Iterator
-from dataclasses import dataclass as _dataclass
-from enum import Enum as _Enum
+from collections.abc import Iterator
+from dataclasses import dataclass
+from enum import Enum
 import math
 import random
 import time
@@ -8,7 +8,7 @@ from combolink.diagram import *
 from combolink.properties import get_edges, is_infinity_unknot
 
 
-class MoveKind(str, _Enum):
+class MoveKind(str, Enum):
     LEFT_POSITIVE_TWIST = "left_positive_twist"
     LEFT_NEGATIVE_TWIST = "left_negative_twist"
     RIGHT_POSITIVE_TWIST = "right_positive_twist"
@@ -37,7 +37,7 @@ _MOVE_ARITIES = {
 }
 
 
-@_dataclass(frozen=True)
+@dataclass(frozen=True)
 class Move:
     """A Reidemeister move and its ordered edge arguments."""
 
@@ -749,7 +749,7 @@ def apply_move(self: Diagram, move: Move) -> Diagram:
     raise ValueError(f"unsupported move kind: {move.kind!r}")
 
 
-def transitions(self: Diagram) -> _Iterator[tuple[Move, Diagram]]:
+def transitions(self: Diagram) -> Iterator[tuple[Move, Diagram]]:
     """Yield each legal move with the diagram it produces."""
     for move in get_moves(self):
         yield move, apply_move(self, move)

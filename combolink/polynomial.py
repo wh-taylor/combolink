@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from types import NotImplementedType as _NotImplementedType
-from typing import overload as _overload
+from types import NotImplementedType
+from typing import overload
 
 _Exponent = int | float
 _Power = tuple[_Exponent, ...]
@@ -15,12 +15,12 @@ _CoefficientMap = _ScalarCoefficientMap | _TupleCoefficientMap
 
 
 class Polynomial:
-    @_overload
+    @overload
     def __init__(
         self, coefficients: _ScalarCoefficientMap, fallback_n_vars: int = 0
     ) -> None: ...
 
-    @_overload
+    @overload
     def __init__(
         self, coefficients: _TupleCoefficientMap, fallback_n_vars: int = 0
     ) -> None: ...
@@ -67,7 +67,7 @@ class Polynomial:
         
         return sum
     
-    def __eq__(self, other: object) -> bool | _NotImplementedType:
+    def __eq__(self, other: object) -> bool | NotImplementedType:
         if not isinstance(other, Polynomial):
             return NotImplemented
         return self.coefficients == other.coefficients and self.n_vars == other.n_vars
