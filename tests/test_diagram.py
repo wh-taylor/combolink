@@ -1,5 +1,5 @@
-from unknotter import reflect, reverse
-from unknotter.diagram import Diagram
+from combolink import reflect, reverse
+from combolink.diagram import Diagram
 
 
 def test_diagram_equality_with_non_diagram_objects():

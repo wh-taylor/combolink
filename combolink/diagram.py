@@ -1,6 +1,6 @@
 from __future__ import annotations
 from types import NotImplementedType
-from unknotter.polynomial import *
+from combolink.polynomial import *
 
 Edge = int
 SignedEdge = int

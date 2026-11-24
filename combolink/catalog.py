@@ -1,4 +1,4 @@
-from unknotter.diagram import Diagram, PDNotation
+from combolink.diagram import Diagram, PDNotation
 from itertools import islice
 from pathlib import Path
 

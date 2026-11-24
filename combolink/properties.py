@@ -1,5 +1,5 @@
 from itertools import product
-from unknotter.diagram import *
+from combolink.diagram import *
 
 
 def _require_valid_diagram(self: Diagram) -> None:

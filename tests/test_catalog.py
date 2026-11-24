@@ -3,7 +3,7 @@ from pathlib import Path
 import subprocess
 import sys
 
-from unknotter.catalog import first_n_knots
+from combolink.catalog import first_n_knots
 
 
 def test_catalog_loads_outside_repository_directory(tmp_path):
@@ -17,7 +17,7 @@ def test_catalog_loads_outside_repository_directory(tmp_path):
         [
             sys.executable,
             "-c",
-            "from unknotter.catalog import knot; assert knot(3, 1)",
+            "from combolink.catalog import knot; assert knot(3, 1)",
         ],
         cwd=tmp_path,
         env=env,

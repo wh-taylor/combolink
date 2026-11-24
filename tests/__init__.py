@@ -1,8 +1,8 @@
 import pytest
-from unknotter.catalog import *
-from unknotter.diagram import Diagram, ReidemeisterError
-from unknotter.polynomial import Polynomial
-from unknotter.reidemeister import *
-from unknotter.properties import *
-from unknotter.transformations import *
+from combolink.catalog import *
+from combolink.diagram import Diagram, ReidemeisterError
+from combolink.polynomial import Polynomial
+from combolink.reidemeister import *
+from combolink.properties import *
+from combolink.transformations import *
 

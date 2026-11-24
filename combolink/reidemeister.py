@@ -1,8 +1,8 @@
 import math
 import random
 import time
-from unknotter.diagram import *
-from unknotter.properties import get_edges, is_infinity_unknot
+from combolink.diagram import *
+from combolink.properties import get_edges, is_infinity_unknot
 
 def _is_unpokable(self: Diagram, edge1: Edge, edge2: Edge) -> bool:
     """Return whether the edges have the crossing pattern for an R2 removal."""

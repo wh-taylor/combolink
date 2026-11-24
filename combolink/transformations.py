@@ -1,4 +1,4 @@
-from unknotter.diagram import *
+from combolink.diagram import *
 
 def reverse(self: Diagram) -> Diagram:
     """Return a diagram with opposite orientation of `diagram`."""

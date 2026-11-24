@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "combolink"
+version = "0.1.0"
+description = "Manipulate and analyze knot and link diagrams."
+readme = "README.md"
+requires-python = ">=3.12"
+license = { file = "LICENSE" }
+
+[tool.setuptools.packages.find]
+include = ["combolink*"]
+
+[tool.setuptools.package-data]
+combolink = ["knotinfo.csv"]
