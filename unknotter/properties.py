@@ -1,6 +1,12 @@
 from itertools import product
 from unknotter.diagram import *
 
+
+def _require_valid_diagram(self: Diagram) -> None:
+    if not self.is_valid():
+        raise ValueError("cannot compute link properties for an invalid diagram.")
+
+
 def gauss_code(self: Diagram) -> list[int]:
     """Return the Gauss code of a diagram."""
     raise NotImplementedError
@@ -11,6 +17,7 @@ def dt_notation(self: Diagram) -> list[int]:
 
 def kauffman_bracket(self: Diagram) -> Polynomial:
     """Return the Kauffman bracket polynomial of a diagram."""
+    _require_valid_diagram(self)
     if self == Diagram([(1, 1, 2, 2)]): return Polynomial({3: -1})
 
     factored_poly = [(((a, d), (b, c)), ((a, b), (c, d))) for a, b, c, d in self.pd_code]
@@ -58,6 +65,7 @@ def kauffman_bracket(self: Diagram) -> Polynomial:
 
 def get_writhe(self: Diagram) -> int:
     """Return the writhe of a diagram."""
+    _require_valid_diagram(self)
     writhe = 0
     for _, b, _, d in self.pd_code:
         if self._next(b) == d:

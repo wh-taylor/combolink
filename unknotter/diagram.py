@@ -11,16 +11,10 @@ class ReidemeisterError(Exception):
     pass
 
 class Diagram:
-    def __init__(self, pd_code, n_components: int | None = None):
+    def __init__(self, pd_code):
         self.pd_code: PDNotation = pd_code
-        self._n_components = n_components
     
     def __repr__(self) -> str:
-        if self._n_components is not None:
-            return (
-                f'Diagram({repr(self.pd_code)}, '
-                f'n_components={self._n_components})'
-            )
         return f'Diagram({repr(self.pd_code)})'
     
     def __eq__(self, other: object) -> bool | NotImplementedType:
@@ -30,39 +24,40 @@ class Diagram:
         if not self.is_valid() or not other.is_valid():
             return False
         if self.pd_code == other.pd_code:
-            return self.n_components == other.n_components
+            return True
         for n in range(2*len(self.pd_code)):
             if self.shift(n).identical(other):
                 return True
         return False
     
     def _shiftmod(self, edge: Edge, n: int) -> Edge:
-        """Shift an edge by a given amount, wrapping around the number of edges."""
-        return (edge + n - 1) % (2*len(self.pd_code)) + 1
+        """Shift an edge within its oriented component cycle."""
+        for component in self.components:
+            if edge in component:
+                index = component.index(edge)
+                return component[(index + n) % len(component)]
+        raise ValueError(f"edge {edge} does not belong to this diagram.")
 
     def shift(self, n: int) -> Diagram:
         """Return a diagram with all of its edge values shifted up by `n`."""
         return Diagram(
-            [tuple(self._shiftmod(edge, n) for edge in crossing) for crossing in self.pd_code],
-            n_components=self._n_components,
+            [
+                tuple(self._shiftmod(edge, n) for edge in crossing)
+                for crossing in self.pd_code
+            ]
         )
 
     def identical(self, other: Diagram) -> bool:
         """Return true if and only if all edge values of both diagrams are completely identical."""
         if not self.is_valid() or not other.is_valid(): return False
         if len(self.pd_code) != len(other.pd_code): return False
-        if self.n_components != other.n_components: return False
         return {tuple(crossing) for crossing in self.pd_code} == {
             tuple(crossing) for crossing in other.pd_code
         }
 
     def _calculate_components(self) -> tuple[tuple[Edge, ...], ...] | None:
         if not self.pd_code:
-            if self._n_components is None:
-                return ((),)
-            if type(self._n_components) is not int or self._n_components < 0:
-                return None
-            return tuple(() for _ in range(self._n_components))
+            return None
 
         edge_count = 2 * len(self.pd_code)
         edge_counts = [0] * edge_count
@@ -97,11 +92,13 @@ class Diagram:
             components.append(tuple(sorted(component)))
 
         result = tuple(sorted(components))
-        if self._n_components is not None and (
-            type(self._n_components) is not int
-            or self._n_components != len(result)
-        ):
-            return None
+        for component in result:
+            if component != tuple(range(component[0], component[-1] + 1)):
+                return None
+            for index, edge in enumerate(component):
+                next_edge = component[(index + 1) % len(component)]
+                if next_edge not in adjacent_edges[edge - 1]:
+                    return None
         return result
 
     @property
@@ -158,10 +155,7 @@ class Diagram:
 
         This method is meant for adjusting a diagram to be combined with another.
         """
-        return Diagram(
-            [tuple(edge + n for edge in crossing) for crossing in self.pd_code],
-            n_components=self._n_components,
-        )
+        return Diagram([tuple(edge + n for edge in crossing) for crossing in self.pd_code])
 
     def _index_is_facing(self, crossing_index: int, edge_index: int) -> bool:
         """Returns whether or not the given index represents an edge that is facing its crossing."""
