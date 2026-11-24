@@ -1,14 +1,41 @@
 from __future__ import annotations
 
+from types import NotImplementedType as _NotImplementedType
+from typing import overload as _overload
+
+_Exponent = int | float
+_Power = tuple[_Exponent, ...]
+_ScalarCoefficientMap = dict[int, int] | dict[float, int] | dict[_Exponent, int]
+_TupleCoefficientMap = (
+    dict[tuple[int, ...], int]
+    | dict[tuple[float, ...], int]
+    | dict[_Power, int]
+)
+_CoefficientMap = _ScalarCoefficientMap | _TupleCoefficientMap
+
+
 class Polynomial:
-    def __init__(self, coefficients: dict[tuple[int, ...], int] | dict[int, int], fallback_n_vars: int = 0):
-        # If `coefficients` uses integer powers instead of tuple powers,
-        # we want to force it into tuple powers.
-        corrected_coefficients: dict[tuple[int, ...], int] = {}
-        if all(isinstance(key, int) or isinstance(key, float) for key in coefficients):
-            corrected_coefficients = {(power,): coefficient for power, coefficient in coefficients.items()}
-        else:
-            corrected_coefficients = coefficients
+    @_overload
+    def __init__(
+        self, coefficients: _ScalarCoefficientMap, fallback_n_vars: int = 0
+    ) -> None: ...
+
+    @_overload
+    def __init__(
+        self, coefficients: _TupleCoefficientMap, fallback_n_vars: int = 0
+    ) -> None: ...
+
+    def __init__(
+        self,
+        coefficients: _CoefficientMap,
+        fallback_n_vars: int = 0,
+    ) -> None:
+        corrected_coefficients: dict[_Power, int] = {}
+        for power, coefficient in coefficients.items():
+            if isinstance(power, (int, float)):
+                corrected_coefficients[(power,)] = coefficient
+            else:
+                corrected_coefficients[power] = coefficient
         
         if len(corrected_coefficients) == 0:
             self.n_vars = fallback_n_vars
@@ -40,15 +67,17 @@ class Polynomial:
         
         return sum
     
-    def __eq__(self, other: Polynomial) -> bool:
+    def __eq__(self, other: object) -> bool | _NotImplementedType:
+        if not isinstance(other, Polynomial):
+            return NotImplemented
         return self.coefficients == other.coefficients and self.n_vars == other.n_vars
     
-    def __add__(self, other: Polynomial):
+    def __add__(self, other: Polynomial) -> Polynomial:
         if self.n_vars != other.n_vars:
             raise TypeError("cannot add two polynomials with different numbers of variables.")
 
         power_list = list(set(list(self.coefficients.keys()) + list(other.coefficients.keys())))
-        new_coefficients: dict[tuple[int, ...], int] = {}
+        new_coefficients: dict[_Power, int] = {}
 
         for powers in power_list:
             sum = self.coefficients.get(powers, 0) + other.coefficients.get(powers, 0)
@@ -56,11 +85,11 @@ class Polynomial:
 
         return Polynomial(new_coefficients)
     
-    def __mul__(self, other: Polynomial):
+    def __mul__(self, other: Polynomial) -> Polynomial:
         if self.n_vars != other.n_vars:
             raise TypeError("cannot multiply two polynomials with different numbers of variables.")
 
-        new_coefficients: dict[tuple[int, ...], int] = {}
+        new_coefficients: dict[_Power, int] = {}
 
         for powers1, coefficient1 in self.coefficients.items():
             for powers2, coefficient2 in other.coefficients.items():
@@ -71,12 +100,12 @@ class Polynomial:
 
         return Polynomial(new_coefficients)
     
-    def __pow__(self, power: int):
+    def __pow__(self, power: int) -> Polynomial:
         if power < 0:
             raise ValueError("cannot take a knot polynomial to a negative power.")
 
         p = Polynomial.one(self.n_vars)
-        for i in range(power):
+        for _ in range(power):
             p *= self
         return p
     
@@ -105,7 +134,7 @@ class Polynomial:
                     out += var
                     if power != 1:
                         out += '^'
-                        if power.is_integer():
+                        if isinstance(power, float) and power.is_integer():
                             out += str(int(power))
                         else:
                             out += str(power)
@@ -114,9 +143,11 @@ class Polynomial:
     def __repr__(self) -> str:
         return self.var('_')
     
+    @staticmethod
     def zero(n_vars: int = 1) -> Polynomial:
         return Polynomial({}, n_vars)
     
+    @staticmethod
     def one(n_vars: int = 1) -> Polynomial:
         return Polynomial({(0,)*n_vars: 1})
 

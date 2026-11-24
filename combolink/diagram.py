@@ -164,6 +164,7 @@ class Diagram:
             return self.pd_code[crossing_index][3] == self._next(self.pd_code[crossing_index][1])
         if edge_index == 3:
             return self.pd_code[crossing_index][1] == self._next(self.pd_code[crossing_index][3])
+        return False
 
     def _get_forth_index(self, edge: Edge) -> tuple[int, int]:
         """Get the index of the given edge in the crossing it faces toward.

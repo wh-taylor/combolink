@@ -266,8 +266,13 @@ def _relabel_after_contractions(
 
     try:
         return [
-            tuple(old_to_new[edge] for edge in crossing)
-            for crossing in pd_code
+            (
+                old_to_new[a],
+                old_to_new[b],
+                old_to_new[c],
+                old_to_new[d],
+            )
+            for a, b, c, d in pd_code
         ]
     except KeyError as error:
         raise ReidemeisterError("removed crossing left an unmatched PD edge.") from error
@@ -299,7 +304,12 @@ def _prepare_twist(
                 new_crossing_as_list.append(edge + 2)
             else:
                 new_crossing_as_list.append(edge)
-        new_crossing: Crossing = tuple(new_crossing_as_list)
+        new_crossing: Crossing = (
+            new_crossing_as_list[0],
+            new_crossing_as_list[1],
+            new_crossing_as_list[2],
+            new_crossing_as_list[3],
+        )
         pd_code.append(new_crossing)
     
     return pd_code
@@ -436,7 +446,12 @@ def _prepare_poke(
                 )
             else:
                 new_crossing_as_list.append(edge + 4)
-        new_crossing: Crossing = tuple(new_crossing_as_list)
+        new_crossing: Crossing = (
+            new_crossing_as_list[0],
+            new_crossing_as_list[1],
+            new_crossing_as_list[2],
+            new_crossing_as_list[3],
+        )
         pd_code.append(new_crossing)
 
     return pd_code
@@ -793,6 +808,7 @@ def apply_random_move(
                 return slide(self, *edges)
     except NotImplementedError:
         return apply_random_move(self, beta, rng)
+    raise RuntimeError("no Reidemeister move could be applied.")
 
 def randomeister(self: Diagram, moves: int, beta: float, show: bool = False) -> list[Diagram]:
     """Return the diagram sequence produced by repeated random moves."""
