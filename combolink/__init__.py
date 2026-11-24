@@ -4,6 +4,7 @@ from .catalog import (
     THISTLETHWAITE_UNKNOT,
     first_n_knots,
     knot,
+    torus_knot,
 )
 from .diagram import (
     Crossing,
@@ -93,6 +94,7 @@ __all__ = [
     "right_positive_twist",
     "slide",
     "transitions",
+    "torus_knot",
     "unknot_solver",
     "unpoke",
     "untwist",
