@@ -71,11 +71,19 @@ def test_slides_preserve_components_using_single_crossing_unknots():
     assert_edge_cycles_are_traversable(slid)
 
 
-def test_one_crossing_unknot_can_be_untwisted_without_becoming_crossingless():
+def test_infinity_unknots_have_no_untwistables():
+    for pd_code in (
+        [(1, 2, 2, 1)],
+        [(2, 2, 1, 1)],
+        [(1, 1, 2, 2)],
+    ):
+        assert get_untwistables(Diagram(pd_code)) == []
+
+
+def test_one_crossing_unknot_untwist_is_a_no_op():
     unknot = Diagram([(1, 2, 2, 1)])
 
-    assert get_untwistables(unknot)
-    for edge in get_untwistables(unknot):
+    for edge in (1, 2):
         simplified = untwist(unknot, edge)
         assert simplified.is_valid()
         assert simplified.n_components == 1

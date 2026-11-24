@@ -120,6 +120,9 @@ def get_twistables(self: Diagram) -> list[Edge]:
 
 def get_untwistables(self: Diagram) -> list[Edge]:
     """Return the list of edges that can be untwisted."""
+    if is_infinity_unknot(self):
+        return []
+
     untwistables = []
     for crossing in self.pd_code:
         if len(set(crossing)) == 3:
@@ -127,7 +130,7 @@ def get_untwistables(self: Diagram) -> list[Edge]:
         elif len(set(crossing)) == 2 and all(
             crossing.count(edge) == 2 for edge in set(crossing)
         ):
-            untwistables.append(max(set(crossing), key=crossing.count))
+            untwistables.extend(dict.fromkeys(crossing))
     return untwistables
 
 def get_pokables(self: Diagram) -> list[tuple[Edge, Edge]]:
