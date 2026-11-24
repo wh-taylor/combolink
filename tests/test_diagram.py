@@ -1,6 +1,4 @@
-from combolink import reflect, reverse
-from combolink.diagram import Diagram
-
+from tests.__init__ import *
 
 def test_diagram_equality_with_non_diagram_objects():
     diagram = Diagram([(1, 2, 2, 1)])

@@ -1,13 +1,13 @@
-import pytest
-
-from tests import *
+from tests.__init__ import *
 
 
-HOPF_LINK = Diagram([
-    (1, 4, 2, 3),
-    (3, 2, 4, 1),
-    (5, 6, 6, 5),
-])
+HOPF_LINK = Diagram(
+    [
+        (1, 4, 2, 3),
+        (3, 2, 4, 1),
+        (5, 6, 6, 5),
+    ]
+)
 
 
 def assert_edge_cycles_are_traversable(diagram):
@@ -47,8 +47,7 @@ def test_pokes_between_link_components_preserve_components_and_can_be_undone(
     assert poked.n_components == 3
     assert_edge_cycles_are_traversable(poked)
     assert any(
-        unpoke(poked, *candidate) == HOPF_LINK
-        for candidate in get_unpokables(poked)
+        unpoke(poked, *candidate) == HOPF_LINK for candidate in get_unpokables(poked)
     )
 
 
