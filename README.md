@@ -44,10 +44,13 @@ above 10 crossings, provide the alternating status as `"a"` or `"n"`:
 alternating_knot = cl.knot(11, 1, "a")
 ```
 
-Generate a positive torus knot directly with coprime positive parameters:
+Generate positive torus links directly with positive parameters. The number of
+components is `gcd(p, q)`; use `torus_knot` when you specifically require a
+single-component knot:
 
 ```python
-torus_trefoil = cl.torus_knot(2, 3)
+torus_trefoil = cl.torus_link(2, 3)
+hopf_link = cl.torus_link(2, 2)
 ```
 
 You can also create a diagram directly from its PD code, a list of four-edge

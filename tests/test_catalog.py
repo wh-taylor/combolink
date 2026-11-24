@@ -5,7 +5,7 @@ import sys
 
 import pytest
 
-from combolink import torus_knot
+from combolink import torus_knot, torus_link
 from combolink.catalog import first_n_knots, knot
 
 
@@ -54,6 +54,15 @@ def test_torus_knot_generates_standard_knot_diagrams():
 def test_torus_knot_generates_the_unknot_when_parameter_is_one():
     assert torus_knot(1, 5).n_components == 1
     assert torus_knot(5, 1).n_components == 1
+
+
+def test_torus_link_generates_multiple_components_when_parameters_are_not_coprime():
+    hopf_link = torus_link(2, 2)
+
+    assert hopf_link.is_valid()
+    assert hopf_link.n_components == 2
+    assert len(hopf_link.pd_code) == 2
+    assert torus_link(2, 3) == torus_knot(2, 3)
 
 
 def test_torus_knot_requires_positive_coprime_integers():

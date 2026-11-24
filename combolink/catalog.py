@@ -80,12 +80,12 @@ def _relabel_oriented_pd_code(pd_code: PDNotation) -> PDNotation:
     ]
 
 
-def torus_knot(p: int, q: int) -> Diagram:
-    """Generate the positive torus knot T(p, q) for positive coprime integers."""
+def _validate_torus_parameters(p: int, q: int) -> None:
     if type(p) is not int or type(q) is not int or p < 1 or q < 1:
         raise ValueError("p and q must be positive integers.")
-    if gcd(p, q) != 1:
-        raise ValueError("p and q must be coprime to define a torus knot.")
+
+
+def _generate_torus_link_diagram(p: int, q: int) -> Diagram:
     if p == 1 or q == 1:
         return Diagram([(1, 2, 2, 1)])
 
@@ -116,9 +116,23 @@ def torus_knot(p: int, q: int) -> Diagram:
         for first, second, third, fourth in crossings
     ]
     diagram = Diagram(_relabel_oriented_pd_code(closed_crossings))
-    if not diagram.is_valid() or diagram.n_components != 1:
-        raise RuntimeError("could not generate a valid torus knot diagram.")
+    if not diagram.is_valid() or diagram.n_components != gcd(p, q):
+        raise RuntimeError("could not generate a valid torus link diagram.")
     return diagram
+
+
+def torus_link(p: int, q: int) -> Diagram:
+    """Generate the positive torus link T(p, q) for positive integers."""
+    _validate_torus_parameters(p, q)
+    return _generate_torus_link_diagram(p, q)
+
+
+def torus_knot(p: int, q: int) -> Diagram:
+    """Generate the positive torus knot T(p, q) for coprime positive integers."""
+    _validate_torus_parameters(p, q)
+    if gcd(p, q) != 1:
+        raise ValueError("p and q must be coprime to define a torus knot.")
+    return _generate_torus_link_diagram(p, q)
 
 
 # Generator of all prime knot diagrams in the catalog.

@@ -5,6 +5,7 @@ from .catalog import (
     first_n_knots,
     knot,
     torus_knot,
+    torus_link,
 )
 from .diagram import (
     Crossing,
@@ -95,6 +96,7 @@ __all__ = [
     "slide",
     "transitions",
     "torus_knot",
+    "torus_link",
     "unknot_solver",
     "unpoke",
     "untwist",
