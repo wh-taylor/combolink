@@ -1,5 +1,5 @@
 from .catalog import (
-    KNOTS,
+    PRIME_KNOTS,
     OCHIAI_UNKNOT,
     THISTLETHWAITE_UNKNOT,
     first_n_knots,
@@ -55,7 +55,7 @@ __all__ = [
     "Crossing",
     "Diagram",
     "Edge",
-    "KNOTS",
+    "PRIME_KNOTS",
     "Move",
     "MoveKind",
     "OCHIAI_UNKNOT",

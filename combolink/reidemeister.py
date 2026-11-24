@@ -9,6 +9,8 @@ from combolink.properties import get_edges, is_infinity_unknot
 
 
 class MoveKind(str, Enum):
+    """Kinds of supported Reidemeister moves."""
+
     LEFT_POSITIVE_TWIST = "left_positive_twist"
     LEFT_NEGATIVE_TWIST = "left_negative_twist"
     RIGHT_POSITIVE_TWIST = "right_positive_twist"
@@ -19,9 +21,23 @@ class MoveKind(str, Enum):
     SLIDE = "slide"
 
     def __str__(self) -> str:
+        """Return the move kind in constructor-style display form.
+
+        Returns
+        -------
+        str
+            The title-cased move name.
+        """
         return "".join(part.title() for part in self.name.split("_"))
 
     def __repr__(self) -> str:
+        """Return the user-facing string representation of the move kind.
+
+        Returns
+        -------
+        str
+            The title-cased move name.
+        """
         return str(self)
 
 
@@ -39,12 +55,38 @@ _MOVE_ARITIES = {
 
 @dataclass(frozen=True)
 class Move:
-    """A Reidemeister move and its ordered edge arguments."""
+    """A Reidemeister move and its ordered edge arguments.
+
+    Parameters
+    ----------
+    kind : MoveKind
+        Operation to perform.
+    edges : tuple of Edge
+        Ordered edge labels used as arguments to the move.
+
+    Raises
+    ------
+    TypeError
+        If ``kind`` is not a ``MoveKind``, ``edges`` is not a tuple, or an edge
+        is not a positive integer.
+    ValueError
+        If the number of edges is wrong or a move requiring distinct edges
+        receives duplicates.
+    """
 
     kind: MoveKind
     edges: tuple[Edge, ...]
 
     def __post_init__(self) -> None:
+        """Validate the move kind and its edge arguments.
+
+        Raises
+        ------
+        TypeError
+            If the kind or edge argument types are invalid.
+        ValueError
+            If the edge count is incorrect or required edges are not distinct.
+        """
         if not isinstance(self.kind, MoveKind):
             raise TypeError("kind must be a MoveKind.")
         if not isinstance(self.edges, tuple):
@@ -60,9 +102,23 @@ class Move:
                 raise ValueError(f"{self.kind.value} requires distinct edges.")
 
     def __str__(self) -> str:
+        """Return the constructor-style representation of the move.
+
+        Returns
+        -------
+        str
+            The move kind and ordered edge tuple.
+        """
         return f"Move({self.kind}, {self.edges!r})"
 
     def __repr__(self) -> str:
+        """Return the string representation of the move.
+
+        Returns
+        -------
+        str
+            The constructor-style move representation.
+        """
         return str(self)
 
 
@@ -115,11 +171,34 @@ def _projection_component_ids(self: Diagram) -> dict[Edge, int]:
 
 
 def get_twistables(self: Diagram) -> list[Edge]:
-    """Return the list of edges that can be twisted (which is all of them)."""
+    """Return edges on which a Reidemeister I twist can be applied.
+
+    Parameters
+    ----------
+    self : Diagram
+        Diagram whose edges are enumerated.
+
+    Returns
+    -------
+    list of Edge
+        All edge labels in the diagram.
+    """
     return get_edges(self)
 
 def get_untwistables(self: Diagram) -> list[Edge]:
-    """Return the list of edges that can be untwisted."""
+    """Return edges adjacent to removable Reidemeister I twists.
+
+    Parameters
+    ----------
+    self : Diagram
+        Diagram to inspect.
+
+    Returns
+    -------
+    list of Edge
+        Edge labels that can be untwisted. One-crossing infinity-unknot
+        encodings return an empty list.
+    """
     if is_infinity_unknot(self):
         return []
 
@@ -134,7 +213,18 @@ def get_untwistables(self: Diagram) -> list[Edge]:
     return untwistables
 
 def get_pokables(self: Diagram) -> list[tuple[Edge, Edge]]:
-    """Return the list of ordered pairs of edges that can be poked."""
+    """Return ordered edge pairs for Reidemeister II insertions.
+
+    Parameters
+    ----------
+    self : Diagram
+        Diagram to inspect.
+
+    Returns
+    -------
+    list of tuple of Edge
+        Ordered ``(under_edge, over_edge)`` pairs that can be poked.
+    """
     pokables = []
     for edge in get_edges(self):
         pokable_with = []
@@ -163,7 +253,18 @@ def get_pokables(self: Diagram) -> list[tuple[Edge, Edge]]:
     return pokables
 
 def get_unpokables(self: Diagram) -> list[tuple[Edge, Edge]]:
-    """Return the list of ordered pairs of edges that can be unpoked."""
+    """Return edge pairs at removable Reidemeister II crossings.
+
+    Parameters
+    ----------
+    self : Diagram
+        Diagram to inspect.
+
+    Returns
+    -------
+    list of tuple of Edge
+        Sorted pairs of edge labels that can be unpoked.
+    """
     unpokables = []
     for edge in get_edges(self):
         if any(edge in pair for pair in unpokables):
@@ -186,7 +287,18 @@ def get_unpokables(self: Diagram) -> list[tuple[Edge, Edge]]:
     return unpokables
 
 def get_slidables(self: Diagram) -> list[tuple[Edge, Edge, Edge]]:
-    """Return the list of ordered triplets of edges that can be slid."""
+    """Return edge triples that support a Reidemeister III slide.
+
+    Parameters
+    ----------
+    self : Diagram
+        Diagram to inspect.
+
+    Returns
+    -------
+    list of tuple of Edge
+        Sorted triples of edge labels that can be slid.
+    """
     slidables = []
     for edge in get_edges(self):
         if any(edge in triplet for triplet in slidables):
@@ -339,7 +451,25 @@ def _twist(self: Diagram, edge: Edge, crossing: Crossing) -> Diagram:
     raise ReidemeisterError("could not orient the resulting twist.")
 
 def left_positive_twist(self: Diagram, edge: Edge) -> Diagram:
-    """Apply a left-positive twist on `edge`."""
+    """Apply a positive left-handed Reidemeister I twist.
+
+    Parameters
+    ----------
+    self : Diagram
+        Diagram to modify.
+    edge : Edge
+        Edge along which to insert the twist.
+
+    Returns
+    -------
+    Diagram
+        The diagram with the twist inserted.
+
+    Raises
+    ------
+    ReidemeisterError
+        If the resulting crossing pattern cannot be oriented.
+    """
     if is_infinity_unknot(self):
         if edge == 1:
             return Diagram([(1, 2, 2, 3), (3, 1, 4, 4)])
@@ -350,7 +480,25 @@ def left_positive_twist(self: Diagram, edge: Edge) -> Diagram:
     return _twist(self, edge, (edge, edge + 2, edge + 1, edge + 1))
 
 def left_negative_twist(self: Diagram, edge: Edge) -> Diagram:
-    """Apply a left-negative twist on `edge`."""
+    """Apply a negative left-handed Reidemeister I twist.
+
+    Parameters
+    ----------
+    self : Diagram
+        Diagram to modify.
+    edge : Edge
+        Edge along which to insert the twist.
+
+    Returns
+    -------
+    Diagram
+        The diagram with the twist inserted.
+
+    Raises
+    ------
+    ReidemeisterError
+        If the resulting crossing pattern cannot be oriented.
+    """
     if is_infinity_unknot(self):
         if edge == 1:
             return Diagram([(1, 2, 2, 3), (4, 3, 1, 4)])
@@ -361,7 +509,25 @@ def left_negative_twist(self: Diagram, edge: Edge) -> Diagram:
     return _twist(self, edge, (edge + 1, edge, edge + 2, edge + 1))
 
 def right_positive_twist(self: Diagram, edge: Edge) -> Diagram:
-    """Apply a right-positive twist on `edge`."""
+    """Apply a positive right-handed Reidemeister I twist.
+
+    Parameters
+    ----------
+    self : Diagram
+        Diagram to modify.
+    edge : Edge
+        Edge along which to insert the twist.
+
+    Returns
+    -------
+    Diagram
+        The diagram with the twist inserted.
+
+    Raises
+    ------
+    ReidemeisterError
+        If the resulting crossing pattern cannot be oriented.
+    """
     if is_infinity_unknot(self):
         if edge == 1:
             return Diagram([(1, 2, 2, 3), (3, 4, 4, 1)])
@@ -372,7 +538,25 @@ def right_positive_twist(self: Diagram, edge: Edge) -> Diagram:
     return _twist(self, edge, (edge + 1, edge + 1, edge + 2, edge))
 
 def right_negative_twist(self: Diagram, edge: Edge) -> Diagram:
-    """Apply a right-negative twist on `edge`."""
+    """Apply a negative right-handed Reidemeister I twist.
+
+    Parameters
+    ----------
+    self : Diagram
+        Diagram to modify.
+    edge : Edge
+        Edge along which to insert the twist.
+
+    Returns
+    -------
+    Diagram
+        The diagram with the twist inserted.
+
+    Raises
+    ------
+    ReidemeisterError
+        If the resulting crossing pattern cannot be oriented.
+    """
     if is_infinity_unknot(self):
         if edge == 1:
             return Diagram([(1, 2, 2, 3), (4, 4, 1, 3)])
@@ -383,7 +567,25 @@ def right_negative_twist(self: Diagram, edge: Edge) -> Diagram:
     return _twist(self, edge, (edge, edge + 1, edge + 1, edge + 2))
 
 def untwist(self: Diagram, edge: Edge) -> Diagram:
-    """Remove the twist adjacent to the given edge."""
+    """Remove the Reidemeister I twist adjacent to an edge.
+
+    Parameters
+    ----------
+    self : Diagram
+        Diagram to simplify.
+    edge : Edge
+        Edge appearing twice at the twist crossing.
+
+    Returns
+    -------
+    Diagram
+        Diagram with the twist removed.
+
+    Raises
+    ------
+    ReidemeisterError
+        If the edge is not on a valid twist or its arcs cannot be reconnected.
+    """
     crossing_index = next(
         (index for index, crossing in enumerate(self.pd_code) if crossing.count(edge) == 2),
         None,
@@ -515,7 +717,28 @@ def _append_poke_crossings(
 
 
 def poke(self: Diagram, under_edge: Edge, over_edge: Edge) -> Diagram:
-    """Poke `under_edge` underneath `over_edge`."""
+    """Insert a Reidemeister II pair by passing one edge under another.
+
+    Parameters
+    ----------
+    self : Diagram
+        Diagram to modify.
+    under_edge : Edge
+        Edge that passes underneath the new crossings.
+    over_edge : Edge
+        Edge that passes over the new crossings.
+
+    Returns
+    -------
+    Diagram
+        Diagram with two crossings inserted.
+
+    Raises
+    ------
+    ReidemeisterError
+        If the same edge is selected twice, the edges cannot be poked, or the
+        resulting crossing pattern cannot be oriented.
+    """
     if under_edge == over_edge:
         raise ReidemeisterError("cannot poke an edge underneath itself.")
 
@@ -594,7 +817,26 @@ def poke(self: Diagram, under_edge: Edge, over_edge: Edge) -> Diagram:
     raise ReidemeisterError("could not orient the resulting poke.")
 
 def unpoke(self: Diagram, edge1: Edge, edge2: Edge) -> Diagram:
-    """Remove the poke between the two given edges."""
+    """Remove a Reidemeister II pair between two edges.
+
+    Parameters
+    ----------
+    self : Diagram
+        Diagram to simplify.
+    edge1, edge2 : Edge
+        Edge labels identifying the two crossings to remove.
+
+    Returns
+    -------
+    Diagram
+        Diagram with the poke removed.
+
+    Raises
+    ------
+    ReidemeisterError
+        If the edges do not identify exactly two crossings or the remaining
+        arcs cannot be reconnected.
+    """
     removed_crossings = [
         crossing
         for crossing in self.pd_code
@@ -663,7 +905,27 @@ def unpoke(self: Diagram, edge1: Edge, edge2: Edge) -> Diagram:
     return _preserve_component_count(pd_code, self.n_components)
 
 def slide(self: Diagram, edge1: Edge, edge2: Edge, edge3: Edge) -> Diagram:
-    """Slide an edge over the face formed by the three given edges."""
+    """Apply a Reidemeister III move across a triangular face.
+
+    Parameters
+    ----------
+    self : Diagram
+        Diagram to modify.
+    edge1, edge2, edge3 : Edge
+        Ordered edge labels forming the face and satisfying the required
+        over-under pattern.
+
+    Returns
+    -------
+    Diagram
+        Diagram after the slide.
+
+    Raises
+    ------
+    ReidemeisterError
+        If the edges do not form a suitable triangular face or have the wrong
+        crossing pattern.
+    """
     edges = [edge1, edge2, edge3]
 
     # Check if edges all lie on the same face
@@ -701,7 +963,23 @@ def slide(self: Diagram, edge1: Edge, edge2: Edge, edge3: Edge) -> Diagram:
 
 
 def get_moves(self: Diagram) -> list[Move]:
-    """Return all legal Reidemeister moves in a deterministic order."""
+    """Enumerate legal Reidemeister moves in a deterministic order.
+
+    Parameters
+    ----------
+    self : Diagram
+        Diagram to inspect.
+
+    Returns
+    -------
+    list of Move
+        Legal twists, untwists, pokes, unpokes, and slides.
+
+    Raises
+    ------
+    ValueError
+        If the diagram is invalid.
+    """
     if not self.is_valid():
         raise ValueError("cannot get moves for an invalid diagram.")
 
@@ -724,7 +1002,29 @@ def get_moves(self: Diagram) -> list[Move]:
 
 
 def apply_move(self: Diagram, move: Move) -> Diagram:
-    """Apply a move to a diagram, raising an error if its arguments are invalid."""
+    """Apply a specified Reidemeister move.
+
+    Parameters
+    ----------
+    self : Diagram
+        Diagram to modify.
+    move : Move
+        Move kind and ordered edge arguments.
+
+    Returns
+    -------
+    Diagram
+        The diagram after applying the move.
+
+    Raises
+    ------
+    TypeError
+        If ``move`` is not a ``Move`` instance.
+    ValueError
+        If the diagram is invalid or a move edge is outside it.
+    ReidemeisterError
+        If the requested move is not legal for the selected edges.
+    """
     if not isinstance(move, Move):
         raise TypeError("move must be a Move.")
     if not self.is_valid():
@@ -753,7 +1053,23 @@ def apply_move(self: Diagram, move: Move) -> Diagram:
 
 
 def transitions(self: Diagram) -> Iterator[tuple[Move, Diagram]]:
-    """Yield each legal move with the diagram it produces."""
+    """Iterate over legal moves and their resulting diagrams.
+
+    Parameters
+    ----------
+    self : Diagram
+        Diagram whose transitions are generated.
+
+    Yields
+    ------
+    tuple of Move and Diagram
+        Each legal move paired with the diagram produced by that move.
+
+    Raises
+    ------
+    ValueError
+        If the input diagram is invalid.
+    """
     for move in get_moves(self):
         yield move, apply_move(self, move)
 
@@ -761,7 +1077,27 @@ def transitions(self: Diagram) -> Iterator[tuple[Move, Diagram]]:
 def apply_random_move(
     self: Diagram, beta: float, rng: random.Random | None = None
 ) -> Diagram:
-    """Apply one weighted random Reidemeister move."""
+    """Apply one randomly selected Reidemeister move.
+
+    The move categories are weighted by ``exp(-beta)``, ``exp(beta)``,
+    ``exp(-2 * beta)``, ``exp(2 * beta)``, and ``1`` for twists, untwists,
+    pokes, unpokes, and slides, respectively.
+
+    Parameters
+    ----------
+    self : Diagram
+        Diagram to modify.
+    beta : float
+        Parameter controlling the relative weights of move categories.
+    rng : random.Random, optional
+        Random-number generator to use. The module-level generator is used by
+        default.
+
+    Returns
+    -------
+    Diagram
+        The diagram after one move.
+    """
     choose = random.choices if rng is None else rng.choices
     numerical_weights: list[float] = [
         math.e**-beta,
@@ -814,7 +1150,24 @@ def apply_random_move(
     raise RuntimeError("no Reidemeister move could be applied.")
 
 def randomeister(self: Diagram, moves: int, beta: float, show: bool = False) -> list[Diagram]:
-    """Return the diagram sequence produced by repeated random moves."""
+    """Generate a sequence of diagrams by repeatedly applying random moves.
+
+    Parameters
+    ----------
+    self : Diagram
+        Initial diagram.
+    moves : int
+        Number of moves to apply.
+    beta : float
+        Parameter passed to :func:`apply_random_move`.
+    show : bool, default=False
+        If True, print the crossing count after each move.
+
+    Returns
+    -------
+    list of Diagram
+        The initial diagram followed by each successive diagram.
+    """
     diagrams: list[Diagram] = [self]
     diagram = self
     for _ in range(moves):
@@ -824,7 +1177,23 @@ def randomeister(self: Diagram, moves: int, beta: float, show: bool = False) -> 
     return diagrams
 
 def unknot_solver(self: Diagram, beta: float):
-    """Attempt to reduce an unknot diagram to at most two crossings."""
+    """Try random Reidemeister moves until at most two crossings remain.
+
+    This heuristic does not prove that the input is an unknot. It stops after
+    2,000 moves if the diagram has not reached the crossing-count target.
+
+    Parameters
+    ----------
+    self : Diagram
+        Diagram to simplify.
+    beta : float
+        Parameter passed to :func:`apply_random_move`.
+
+    Returns
+    -------
+    None
+        Progress and termination information are printed.
+    """
     diagram = self
     i = 0
     t0 = time.time()

@@ -3,20 +3,80 @@ from combolink.diagram import *
 
 
 def _require_valid_diagram(self: Diagram) -> None:
+    """Raise an error unless ``self`` is a structurally valid diagram.
+
+    Parameters
+    ----------
+    self : Diagram
+        Diagram to validate.
+
+    Raises
+    ------
+    ValueError
+        If ``self`` is not a valid diagram.
+    """
     if not self.is_valid():
         raise ValueError("cannot compute link properties for an invalid diagram.")
 
 
 def gauss_code(self: Diagram) -> list[int]:
-    """Return the Gauss code of a diagram."""
+    """Return the Gauss code of a diagram.
+
+    Parameters
+    ----------
+    self : Diagram
+        Diagram to encode.
+
+    Returns
+    -------
+    list of int
+        Crossing encounters in traversal order.
+
+    Raises
+    ------
+    NotImplementedError
+        This function is not implemented yet.
+    """
     raise NotImplementedError
 
 def dt_notation(self: Diagram) -> list[int]:
-    """Return the Dowker-Thistlethwait notation of a diagram."""
+    """Return the Dowker-Thistlethwaite notation of a diagram.
+
+    Parameters
+    ----------
+    self : Diagram
+        Diagram to encode.
+
+    Returns
+    -------
+    list of int
+        The Dowker-Thistlethwaite sequence.
+
+    Raises
+    ------
+    NotImplementedError
+        This function is not implemented yet.
+    """
     raise NotImplementedError
 
 def kauffman_bracket(self: Diagram) -> Polynomial:
-    """Return the Kauffman bracket polynomial of a diagram."""
+    """Compute the Kauffman bracket polynomial of a diagram.
+
+    Parameters
+    ----------
+    self : Diagram
+        Diagram whose bracket is computed.
+
+    Returns
+    -------
+    Polynomial
+        The Kauffman bracket in the library's Laurent-polynomial format.
+
+    Raises
+    ------
+    ValueError
+        If ``self`` is not a valid diagram.
+    """
     _require_valid_diagram(self)
     if self == Diagram([(1, 1, 2, 2)]): return Polynomial({3: -1})
 
@@ -64,7 +124,23 @@ def kauffman_bracket(self: Diagram) -> Polynomial:
     return sum((Polynomial({power1: 1}) * disjoint_unknot_poly**power2 for power1, power2 in newlist), Polynomial.zero())
 
 def get_writhe(self: Diagram) -> int:
-    """Return the writhe of a diagram."""
+    """Compute the writhe of an oriented diagram.
+
+    Parameters
+    ----------
+    self : Diagram
+        Diagram whose crossing signs are summed.
+
+    Returns
+    -------
+    int
+        The sum of the signed crossings.
+
+    Raises
+    ------
+    ValueError
+        If ``self`` is not a valid diagram.
+    """
     _require_valid_diagram(self)
     writhe = 0
     for _, b, _, d in self.pd_code:
@@ -75,7 +151,23 @@ def get_writhe(self: Diagram) -> int:
     return writhe
 
 def jones(self: Diagram) -> Polynomial:
-    """Return the Jones polynomial of a diagram."""
+    """Compute the Jones polynomial of a diagram.
+
+    Parameters
+    ----------
+    self : Diagram
+        Diagram whose Jones polynomial is computed.
+
+    Returns
+    -------
+    Polynomial
+        The Jones polynomial in the library's Laurent-polynomial format.
+
+    Raises
+    ------
+    ValueError
+        If ``self`` is not a valid diagram.
+    """
     writhe = get_writhe(self)
     bracket = kauffman_bracket(self)
     raw_jones_polynomial = bracket * Polynomial({3*writhe: 1 if writhe % 2 == 0 else -1})
@@ -83,13 +175,49 @@ def jones(self: Diagram) -> Polynomial:
     return Polynomial(coefficients)
 
 def get_edges(self: Diagram) -> list[Edge]:
-    """Return a list of all edges in a diagram with their integer values."""
+    """Return the edge labels used by a diagram.
+
+    Parameters
+    ----------
+    self : Diagram
+        Diagram whose edge labels are enumerated.
+
+    Returns
+    -------
+    list of Edge
+        The integer labels from one through twice the crossing count.
+    """
     return [i + 1 for i in range(2 * len(self.pd_code))]
 
 def is_infinity_unknot(self: Diagram) -> bool:
+    """Check whether ``self`` uses a recognized one-crossing unknot encoding.
+
+    Parameters
+    ----------
+    self : Diagram
+        Diagram to check.
+
+    Returns
+    -------
+    bool
+        Whether the diagram matches either of the library's one-crossing
+        unknot encodings, up to cyclic edge-label shifts.
+    """
     return self == Diagram([(1, 2, 2, 1)]) or self == Diagram([(2, 2, 1, 1)])
 
 def get_plaintext_code(self: Diagram) -> str:
+    """Serialize a diagram as a compact semicolon-delimited PD code.
+
+    Parameters
+    ----------
+    self : Diagram
+        Diagram to serialize.
+
+    Returns
+    -------
+    str
+        The crossing list in the library's plaintext format.
+    """
     output = '['
     for i, (a, b, c, d) in enumerate(self.pd_code):
         output += f'[{a};{b};{c};{d}]'

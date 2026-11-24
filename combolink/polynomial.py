@@ -15,6 +15,12 @@ _CoefficientMap = _ScalarCoefficientMap | _TupleCoefficientMap
 
 
 class Polynomial:
+    """Sparse Laurent polynomial with integer coefficients.
+
+    Exponents may be integers or floating-point values, and each term is stored
+    with a tuple of exponents for one or more variables.
+    """
+
     @overload
     def __init__(
         self, coefficients: _ScalarCoefficientMap, fallback_n_vars: int = 0
@@ -30,6 +36,21 @@ class Polynomial:
         coefficients: _CoefficientMap,
         fallback_n_vars: int = 0,
     ) -> None:
+        """Create a polynomial from a sparse coefficient mapping.
+
+        Parameters
+        ----------
+        coefficients : dict
+            Mapping from an exponent or exponent tuple to an integer
+            coefficient. Scalar exponents are treated as one-variable terms.
+        fallback_n_vars : int, default=0
+            Variable count to use when ``coefficients`` is empty.
+
+        Raises
+        ------
+        TypeError
+            If terms have inconsistent numbers of variables.
+        """
         corrected_coefficients: dict[_Power, int] = {}
         for power, coefficient in coefficients.items():
             if isinstance(power, (int, float)):
@@ -55,6 +76,24 @@ class Polynomial:
                 raise TypeError(f"{len(powers)} variables counted, expected {self.n_vars}.")
     
     def __call__(self, *values: float) -> float:
+        """Evaluate the polynomial at the supplied variable values.
+
+        Parameters
+        ----------
+        *values : float
+            One value for each variable.
+
+        Returns
+        -------
+        float
+            The evaluated polynomial.
+
+        Raises
+        ------
+        ValueError
+            If the number of values differs from the polynomial's variable
+            count.
+        """
         if len(values) != self.n_vars:
             raise ValueError(f"knot polynomial requires {self.n_vars} input variables.")
 
@@ -68,11 +107,41 @@ class Polynomial:
         return sum
     
     def __eq__(self, other: object) -> bool | NotImplementedType:
+        """Compare polynomial coefficients and variable counts.
+
+        Parameters
+        ----------
+        other : object
+            Value to compare with this polynomial.
+
+        Returns
+        -------
+        bool or NotImplementedType
+            Whether the coefficients and variable counts match, or
+            ``NotImplemented`` when ``other`` is not a polynomial.
+        """
         if not isinstance(other, Polynomial):
             return NotImplemented
         return self.coefficients == other.coefficients and self.n_vars == other.n_vars
     
     def __add__(self, other: Polynomial) -> Polynomial:
+        """Add two polynomials with the same number of variables.
+
+        Parameters
+        ----------
+        other : Polynomial
+            Polynomial to add.
+
+        Returns
+        -------
+        Polynomial
+            The sum.
+
+        Raises
+        ------
+        TypeError
+            If the polynomials have different numbers of variables.
+        """
         if self.n_vars != other.n_vars:
             raise TypeError("cannot add two polynomials with different numbers of variables.")
 
@@ -86,6 +155,23 @@ class Polynomial:
         return Polynomial(new_coefficients)
     
     def __mul__(self, other: Polynomial) -> Polynomial:
+        """Multiply two polynomials with the same number of variables.
+
+        Parameters
+        ----------
+        other : Polynomial
+            Polynomial to multiply by.
+
+        Returns
+        -------
+        Polynomial
+            The product.
+
+        Raises
+        ------
+        TypeError
+            If the polynomials have different numbers of variables.
+        """
         if self.n_vars != other.n_vars:
             raise TypeError("cannot multiply two polynomials with different numbers of variables.")
 
@@ -101,6 +187,23 @@ class Polynomial:
         return Polynomial(new_coefficients)
     
     def __pow__(self, power: int) -> Polynomial:
+        """Raise the polynomial to a non-negative integer power.
+
+        Parameters
+        ----------
+        power : int
+            Exponent to raise the polynomial to.
+
+        Returns
+        -------
+        Polynomial
+            The powered polynomial.
+
+        Raises
+        ------
+        ValueError
+            If ``power`` is negative.
+        """
         if power < 0:
             raise ValueError("cannot take a knot polynomial to a negative power.")
 
@@ -110,10 +213,23 @@ class Polynomial:
         return p
     
     def var(self, *vars: str) -> str:
-        """Display a knot polynomial using a specified representation of a variable.
-        
-        Knot polynomials are stored without any particular variable in mind, and so
-        one must be provided in order to display it.
+        """Format the polynomial using the provided variable names.
+
+        Parameters
+        ----------
+        *vars : str
+            One variable name for each polynomial variable.
+
+        Returns
+        -------
+        str
+            The polynomial in human-readable form.
+
+        Raises
+        ------
+        ValueError
+            If the number of names differs from the polynomial's variable
+            count.
         """
         if len(vars) != self.n_vars:
             raise ValueError(f"expected {self.n_vars} variables, received {len(vars)}: {', '.join(vars)}")
@@ -141,13 +257,49 @@ class Polynomial:
         return out
     
     def __repr__(self) -> str:
+        """Return the polynomial formatted with underscore variable names.
+
+        Returns
+        -------
+        str
+            String representation of the polynomial.
+
+        Raises
+        ------
+        ValueError
+            If the polynomial has more than one variable.
+        """
         return self.var('_')
     
     @staticmethod
     def zero(n_vars: int = 1) -> Polynomial:
+        """Construct the zero polynomial.
+
+        Parameters
+        ----------
+        n_vars : int, default=1
+            Number of variables in the zero polynomial.
+
+        Returns
+        -------
+        Polynomial
+            The zero polynomial with the requested variable count.
+        """
         return Polynomial({}, n_vars)
     
     @staticmethod
     def one(n_vars: int = 1) -> Polynomial:
+        """Construct the constant-one polynomial.
+
+        Parameters
+        ----------
+        n_vars : int, default=1
+            Number of variables in the polynomial.
+
+        Returns
+        -------
+        Polynomial
+            The constant polynomial ``1``.
+        """
         return Polynomial({(0,)*n_vars: 1})
 

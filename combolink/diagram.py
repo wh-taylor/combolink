@@ -8,17 +8,52 @@ Crossing = tuple[Edge, Edge, Edge, Edge]
 PDNotation = list[Crossing]
 
 class ReidemeisterError(Exception):
+    """Raised when a requested Reidemeister move cannot be performed."""
+
     pass
 
 class Diagram:
+    """A link diagram represented by planar-diagram (PD) crossings.
+
+    Each crossing is a four-edge tuple. Edge labels identify arcs between
+    crossings, and a diagram's structure can be checked with :meth:`is_valid`.
+    """
+
     def __init__(self, pd_code):
+        """Create a diagram from a PD code without validating it.
+
+        Parameters
+        ----------
+        pd_code : PDNotation
+            Crossing tuples describing the diagram.
+        """
         self.pd_code: PDNotation = pd_code
     
     def __repr__(self) -> str:
+        """Return a constructor-like representation of the diagram.
+
+        Returns
+        -------
+        str
+            The diagram represented as ``Diagram(pd_code)``.
+        """
         return f'Diagram({repr(self.pd_code)})'
     
     def __eq__(self, other: object) -> bool | NotImplementedType:
-        """Check if a diagram is equivalent to another considering orientation."""
+        """Compare diagrams up to cyclic edge-label shifts.
+
+        Parameters
+        ----------
+        other : object
+            Value to compare with this diagram.
+
+        Returns
+        -------
+        bool or NotImplementedType
+            Whether the valid diagrams have the same oriented PD crossings,
+            allowing cyclic shifts of edge labels. Returns ``NotImplemented``
+            for values that are not diagrams.
+        """
         if not isinstance(other, Diagram):
             return NotImplemented
         if not self.is_valid() or not other.is_valid():
@@ -39,7 +74,24 @@ class Diagram:
         raise ValueError(f"edge {edge} does not belong to this diagram.")
 
     def shift(self, n: int) -> Diagram:
-        """Return a diagram with all of its edge values shifted up by `n`."""
+        """Cyclically shift edge labels within their oriented components.
+
+        Parameters
+        ----------
+        n : int
+            Number of positions by which to shift each component's edge labels.
+            Negative values shift in the opposite direction.
+
+        Returns
+        -------
+        Diagram
+            A new diagram with the shifted edge labels.
+
+        Raises
+        ------
+        ValueError
+            If this diagram is invalid.
+        """
         return Diagram(
             [
                 tuple(self._shiftmod(edge, n) for edge in crossing)
@@ -48,7 +100,19 @@ class Diagram:
         )
 
     def identical(self, other: Diagram) -> bool:
-        """Return true if and only if all edge values of both diagrams are completely identical."""
+        """Check whether two diagrams have identical PD crossings.
+
+        Parameters
+        ----------
+        other : Diagram
+            Diagram to compare with this one.
+
+        Returns
+        -------
+        bool
+            Whether both valid diagrams have the same crossings, independent
+            of crossing-list order and with edge labels unchanged.
+        """
         if not self.is_valid() or not other.is_valid(): return False
         if len(self.pd_code) != len(other.pd_code): return False
         return {tuple(crossing) for crossing in self.pd_code} == {
@@ -56,6 +120,14 @@ class Diagram:
         }
 
     def _calculate_components(self) -> tuple[tuple[Edge, ...], ...] | None:
+        """Infer components from the opposite-edge connections in the PD code.
+
+        Returns
+        -------
+        tuple of tuple of Edge or None
+            Sorted edge labels grouped by component, or ``None`` if the PD code
+            is structurally invalid.
+        """
         if not self.pd_code:
             return None
 
@@ -103,7 +175,18 @@ class Diagram:
 
     @property
     def components(self) -> tuple[tuple[Edge, ...], ...]:
-        """Return the link components as groups of PD edge IDs."""
+        """Return edge labels grouped by link component.
+
+        Returns
+        -------
+        tuple of tuple of Edge
+            Each inner tuple contains the labels in one component.
+
+        Raises
+        ------
+        ValueError
+            If the diagram is invalid.
+        """
         components = self._calculate_components()
         if components is None:
             raise ValueError("cannot determine components of an invalid diagram.")
@@ -111,11 +194,29 @@ class Diagram:
 
     @property
     def n_components(self) -> int:
-        """Return the number of link components."""
+        """Return the number of link components.
+
+        Returns
+        -------
+        int
+            Number of components in the diagram.
+
+        Raises
+        ------
+        ValueError
+            If the diagram is invalid.
+        """
         return len(self.components)
 
     def is_valid(self) -> bool:
-        """Return whether this is a structurally valid link PD code."""
+        """Check the structural validity of the PD code.
+
+        Returns
+        -------
+        bool
+            Whether every edge occurs twice and the opposite-edge connections
+            form contiguous link components.
+        """
         return self._calculate_components() is not None
 
     def _get_crossings_with_edge(self, edge: Edge) -> list[Crossing]:
@@ -237,4 +338,11 @@ class Diagram:
         return not self._is_open(edge) and not self._is_closed(edge)
 
     def _mathematica_format(self) -> str:
+        """Format the PD code using Mathematica's ``PD[X[...], ...]`` syntax.
+
+        Returns
+        -------
+        str
+            The diagram in Mathematica planar-diagram notation.
+        """
         return 'PD[' + ','.join(['X[' + ','.join([str(edge) for edge in crossing]) + ']' for crossing in self.pd_code]) + ']'

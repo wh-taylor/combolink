@@ -14,6 +14,19 @@ with Path(__file__).with_name("knotinfo.csv").open() as f:
 
 
 def _raw_pd_to_pd(raw_pd: str) -> PDNotation:
+    """Parse the catalog's compact representation of a PD code.
+
+    Parameters
+    ----------
+    raw_pd : str
+        Crossing labels separated by semicolons.
+
+    Returns
+    -------
+    PDNotation
+        The parsed list of four-edge crossings. An empty input represents the
+        unknot and produces an empty list.
+    """
     str_ns = raw_pd.replace("[", "").replace("]", "").strip().split(";")
     if str_ns == [""]:
         return []  # Handle the unknot (no crossings)
@@ -25,6 +38,29 @@ def _raw_pd_to_pd(raw_pd: str) -> PDNotation:
 
 
 def knot(crossings: int, index: int, alt_status: str = "") -> Diagram:
+    """Look up a prime knot diagram in the bundled catalog.
+
+    Parameters
+    ----------
+    crossings : int
+        Number of crossings in the catalog entry.
+    index : int
+        One-based catalog index for the knot.
+    alt_status : str, default=""
+        Alternating status for entries above ten crossings. Use ``"a"`` for
+        alternating or ``"n"`` for non-alternating entries.
+
+    Returns
+    -------
+    Diagram
+        The knot diagram associated with the requested catalog entry.
+
+    Raises
+    ------
+    KeyError
+        If the requested entry does not exist or the alternating status is
+        required or disallowed for the given crossing count.
+    """
     if alt_status == "" and crossings > 10:
         raise KeyError(
             "knots with greater than 10 crossings require an argument 'a' or 'n'."
@@ -45,6 +81,23 @@ def knot(crossings: int, index: int, alt_status: str = "") -> Diagram:
 
 
 def _relabel_oriented_pd_code(pd_code: PDNotation) -> PDNotation:
+    """Relabel a PD code using its oriented edge cycles.
+
+    Parameters
+    ----------
+    pd_code : PDNotation
+        Crossings whose input-to-output edge mapping forms disjoint cycles.
+
+    Returns
+    -------
+    PDNotation
+        The same crossings with edge labels assigned consecutively by cycle.
+
+    Raises
+    ------
+    RuntimeError
+        If the crossing edges do not form oriented cycles.
+    """
     successors: dict[Edge, Edge] = {}
     for first, second, third, fourth in pd_code:
         successors[first] = third
@@ -81,11 +134,35 @@ def _relabel_oriented_pd_code(pd_code: PDNotation) -> PDNotation:
 
 
 def _validate_torus_parameters(p: int, q: int) -> None:
+    """Validate positive integer parameters for a torus diagram.
+
+    Parameters
+    ----------
+    p, q : int
+        Meridional and longitudinal winding counts.
+
+    Raises
+    ------
+    ValueError
+        If either parameter is not a positive integer.
+    """
     if type(p) is not int or type(q) is not int or p < 1 or q < 1:
         raise ValueError("p and q must be positive integers.")
 
 
 def _generate_torus_link_diagram(p: int, q: int) -> Diagram:
+    """Generate an oriented PD diagram for the positive torus link T(p, q).
+
+    Parameters
+    ----------
+    p, q : int
+        Positive winding counts.
+
+    Returns
+    -------
+    Diagram
+        A diagram with ``gcd(p, q)`` components.
+    """
     if p == 1 or q == 1:
         return Diagram([(1, 2, 2, 1)])
 
@@ -122,13 +199,47 @@ def _generate_torus_link_diagram(p: int, q: int) -> Diagram:
 
 
 def torus_link(p: int, q: int) -> Diagram:
-    """Generate the positive torus link T(p, q) for positive integers."""
+    """Generate the positive torus link T(p, q).
+
+    Parameters
+    ----------
+    p, q : int
+        Positive winding counts. The resulting link has ``gcd(p, q)``
+        components.
+
+    Returns
+    -------
+    Diagram
+        An oriented PD diagram of the torus link.
+
+    Raises
+    ------
+    ValueError
+        If either parameter is not a positive integer.
+    """
     _validate_torus_parameters(p, q)
     return _generate_torus_link_diagram(p, q)
 
 
 def torus_knot(p: int, q: int) -> Diagram:
-    """Generate the positive torus knot T(p, q) for coprime positive integers."""
+    """Generate the positive torus knot T(p, q).
+
+    Parameters
+    ----------
+    p, q : int
+        Positive, coprime winding counts.
+
+    Returns
+    -------
+    Diagram
+        An oriented PD diagram of the torus knot.
+
+    Raises
+    ------
+    ValueError
+        If either parameter is not a positive integer or if they are not
+        coprime.
+    """
     _validate_torus_parameters(p, q)
     if gcd(p, q) != 1:
         raise ValueError("p and q must be coprime to define a torus knot.")
@@ -136,10 +247,27 @@ def torus_knot(p: int, q: int) -> Diagram:
 
 
 # Generator of all prime knot diagrams in the catalog.
-KNOTS = ((name, Diagram(_raw_pd_to_pd(value))) for name, value in _knot_catalog.items())
+PRIME_KNOTS = ((name, Diagram(_raw_pd_to_pd(value))) for name, value in _knot_catalog.items())
 
 
 def first_n_knots(n: int) -> list[tuple[str, Diagram]]:
+    """Return the first ``n`` entries from the prime-knot catalog.
+
+    Parameters
+    ----------
+    n : int
+        Maximum number of catalog entries to return.
+
+    Returns
+    -------
+    list of tuple of str and Diagram
+        Catalog names paired with freshly constructed knot diagrams.
+
+    Raises
+    ------
+    ValueError
+        If ``n`` is negative.
+    """
     return [
         (name, Diagram(_raw_pd_to_pd(value)))
         for name, value in islice(_knot_catalog.items(), n)

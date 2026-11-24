@@ -2,23 +2,79 @@ from combolink.diagram import *
 
 
 def reverse(self: Diagram) -> Diagram:
-    """Return a diagram with opposite orientation of `diagram`."""
+    """Reverse the orientation of a diagram.
+
+    Parameters
+    ----------
+    self : Diagram
+        Diagram to reverse.
+
+    Returns
+    -------
+    Diagram
+        A diagram with the opposite orientation.
+    """
     return Diagram([(d, c, b, a) for (a, b, c, d) in self.pd_code])
 
 
 def reflect(self: Diagram) -> Diagram:
-    """Return a diagram of the reflection of the link of `diagram`."""
+    """Reflect a diagram, producing its mirror image.
+
+    Parameters
+    ----------
+    self : Diagram
+        Diagram to reflect.
+
+    Returns
+    -------
+    Diagram
+        A diagram of the reflected link.
+    """
     return Diagram([(a, d, c, b) for (a, b, c, d) in self.pd_code])
 
 def disjoint_union(self, *others: Diagram):
-    """Return the disjoint union of any number of diagrams."""
+    """Return the disjoint union of this diagram and any additional diagrams.
+
+    Parameters
+    ----------
+    self : Diagram
+        First diagram in the union.
+    *others : Diagram
+        Additional diagrams to include.
+
+    Returns
+    -------
+    Diagram
+        A diagram containing all input components as a disjoint union.
+
+    Raises
+    ------
+    ValueError
+        If any diagrams combined are invalid.
+    """
     result = self
     for other in others:
         result = _disjoint_union(result, other)
     return result
 
 def _disjoint_union(self: Diagram, other: Diagram) -> Diagram:
-    """Return the disjoint union of two diagrams."""
+    """Combine two valid diagrams without joining their components.
+
+    Parameters
+    ----------
+    self, other : Diagram
+        Diagrams to combine.
+
+    Returns
+    -------
+    Diagram
+        Their disjoint union with non-overlapping edge labels.
+
+    Raises
+    ------
+    ValueError
+        If either diagram is invalid.
+    """
     if not self.is_valid() or not other.is_valid():
         raise ValueError("cannot combine invalid diagrams.")
 
@@ -29,6 +85,27 @@ def _disjoint_union(self: Diagram, other: Diagram) -> Diagram:
 def _head_occurrences(
     diagram: Diagram, edge_shift: int, crossing_shift: int
 ) -> dict[Edge, tuple[int, int]]:
+    """Locate the forward-facing crossing occurrence of every edge.
+
+    Parameters
+    ----------
+    diagram : Diagram
+        Diagram whose edges are located.
+    edge_shift : int
+        Offset applied to the edge keys.
+    crossing_shift : int
+        Offset applied to crossing indices.
+
+    Returns
+    -------
+    dict of Edge to tuple of int
+        Edge labels mapped to ``(crossing_index, edge_index)`` pairs.
+
+    Raises
+    ------
+    ValueError
+        If an edge has no oriented crossing occurrence.
+    """
     result: dict[Edge, tuple[int, int]] = {}
     for edge in range(1, 2 * len(diagram.pd_code) + 1):
         try:
@@ -45,6 +122,22 @@ def _head_occurrences(
 def _forward_occurrences(
     diagram: Diagram, edge: Edge, crossing_shift: int = 0
 ) -> list[tuple[int, int]]:
+    """Find all crossing ports where ``edge`` faces its next edge.
+
+    Parameters
+    ----------
+    diagram : Diagram
+        Diagram containing the edge.
+    edge : Edge
+        Edge whose forward-facing occurrences are found.
+    crossing_shift : int, default=0
+        Offset applied to returned crossing indices.
+
+    Returns
+    -------
+    list of tuple of int
+        ``(crossing_index, edge_index)`` positions for the edge.
+    """
     next_edge = diagram._next(edge)
     return [
         (crossing_index + crossing_shift, edge_index)
@@ -62,6 +155,25 @@ def _build_joined_candidate(
     self_head: tuple[int, int],
     other_head: tuple[int, int],
 ) -> Diagram | None:
+    """Build and validate a candidate diagram formed by splicing edge cycles.
+
+    Parameters
+    ----------
+    original_pd_code : list of list of Edge
+        Combined, unmodified PD code of the input diagrams.
+    heads : dict of Edge to tuple of int
+        Forward-facing crossing occurrence for each edge.
+    self_edge, shifted_other_edge : Edge
+        Edge labels being joined in the combined PD code.
+    self_head, other_head : tuple of int
+        Selected crossing ports for the two joined edges.
+
+    Returns
+    -------
+    Diagram or None
+        The joined diagram if this splice produces valid oriented edge cycles;
+        otherwise, ``None``.
+    """
     pd_code = [crossing.copy() for crossing in original_pd_code]
     self_next_index = (self_head[1] + 2) % 4
     other_next_index = (other_head[1] + 2) % 4
@@ -122,14 +234,48 @@ def _build_joined_candidate(
 
 
 def connected_sum(self: Diagram, *others: Diagram) -> Diagram:
-    """Return the connected sum of any number of knot diagrams."""
+    """Return the connected sum of this knot and any additional knot diagrams.
+
+    Parameters
+    ----------
+    self : Diagram
+        First knot diagram in the sum.
+    *others : Diagram
+        Additional knot diagrams to sum.
+
+    Returns
+    -------
+    Diagram
+        The resulting connected-sum diagram.
+
+    Raises
+    ------
+    ValueError
+        If an input is invalid or has more than one component.
+    """
     result = self
     for other in others:
         result = _connected_sum(result, other)
     return result
 
 def _connected_sum(self: Diagram, other: Diagram) -> Diagram:
-    """Return the connected sum of two knot diagrams."""
+    """Join two valid one-component diagrams.
+
+    Parameters
+    ----------
+    self, other : Diagram
+        Knot diagrams to join.
+
+    Returns
+    -------
+    Diagram
+        Their connected sum.
+
+    Raises
+    ------
+    ValueError
+        If either input is invalid or is not a knot diagram.
+    """
     if not self.is_valid() or not other.is_valid():
         raise ValueError("cannot combine invalid diagrams.")
     if self.n_components != 1 or other.n_components != 1:
@@ -138,7 +284,26 @@ def _connected_sum(self: Diagram, other: Diagram) -> Diagram:
     return join(self, other, self.components[0][0], other.components[0][0])
 
 def join(self: Diagram, other: Diagram, self_edge: Edge, other_edge: Edge) -> Diagram:
-    """Return the joining of two diagrams by given edges (generalizes connected sum)."""
+    """Join the components containing two selected edges.
+
+    Parameters
+    ----------
+    self, other : Diagram
+        Diagrams to join.
+    self_edge, other_edge : Edge
+        Edge labels identifying the components to join.
+
+    Returns
+    -------
+    Diagram
+        A diagram in which the selected components have been joined.
+
+    Raises
+    ------
+    ValueError
+        If either diagram is invalid, an edge is outside its diagram, or the
+        selected edges cannot be joined as oriented cycles.
+    """
     if not self.is_valid() or not other.is_valid():
         raise ValueError("cannot combine invalid diagrams.")
     if type(self_edge) is not int or self_edge not in range(
