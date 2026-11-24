@@ -11,17 +11,26 @@ class ReidemeisterError(Exception):
     pass
 
 class Diagram:
-    def __init__(self, pd_code):
+    def __init__(self, pd_code, n_components: int | None = None):
         self.pd_code: PDNotation = pd_code
+        self._n_components = n_components
     
     def __repr__(self) -> str:
+        if self._n_components is not None:
+            return (
+                f'Diagram({repr(self.pd_code)}, '
+                f'n_components={self._n_components})'
+            )
         return f'Diagram({repr(self.pd_code)})'
     
     def __eq__(self, other: object) -> bool | NotImplementedType:
         """Check if a diagram is equivalent to another considering orientation."""
         if not isinstance(other, Diagram):
             return NotImplemented
-        if self.pd_code == other.pd_code: return True
+        if not self.is_valid() or not other.is_valid():
+            return False
+        if self.pd_code == other.pd_code:
+            return self.n_components == other.n_components
         for n in range(2*len(self.pd_code)):
             if self.shift(n).identical(other):
                 return True
@@ -33,24 +42,84 @@ class Diagram:
 
     def shift(self, n: int) -> Diagram:
         """Return a diagram with all of its edge values shifted up by `n`."""
-        return Diagram([tuple(self._shiftmod(edge, n) for edge in crossing) for crossing in self.pd_code])
+        return Diagram(
+            [tuple(self._shiftmod(edge, n) for edge in crossing) for crossing in self.pd_code],
+            n_components=self._n_components,
+        )
 
     def identical(self, other: Diagram) -> bool:
         """Return true if and only if all edge values of both diagrams are completely identical."""
+        if not self.is_valid() or not other.is_valid(): return False
         if len(self.pd_code) != len(other.pd_code): return False
-        return set(self.pd_code) == set(other.pd_code)
+        if self.n_components != other.n_components: return False
+        return {tuple(crossing) for crossing in self.pd_code} == {
+            tuple(crossing) for crossing in other.pd_code
+        }
 
-    def is_valid(self) -> bool:
-        """Return whether the PD code has four valid edge occurrences per crossing."""
-        edge_counts = [0] * (2 * len(self.pd_code))
+    def _calculate_components(self) -> tuple[tuple[Edge, ...], ...] | None:
+        if not self.pd_code:
+            if self._n_components is None:
+                return ((),)
+            if type(self._n_components) is not int or self._n_components < 0:
+                return None
+            return tuple(() for _ in range(self._n_components))
+
+        edge_count = 2 * len(self.pd_code)
+        edge_counts = [0] * edge_count
+        adjacent_edges = [set() for _ in range(edge_count)]
+
         for crossing in self.pd_code:
             if not isinstance(crossing, (tuple, list)) or len(crossing) != 4:
-                return False
+                return None
             for edge in crossing:
-                if type(edge) is not int or not 1 <= edge <= len(edge_counts):
-                    return False
+                if type(edge) is not int or not 1 <= edge <= edge_count:
+                    return None
                 edge_counts[edge - 1] += 1
-        return all(count == 2 for count in edge_counts)
+            for first, second in ((crossing[0], crossing[2]), (crossing[1], crossing[3])):
+                adjacent_edges[first - 1].add(second)
+                adjacent_edges[second - 1].add(first)
+
+        if any(count != 2 for count in edge_counts):
+            return None
+
+        remaining = set(range(1, edge_count + 1))
+        components = []
+        while remaining:
+            component = []
+            stack = [min(remaining)]
+            while stack:
+                edge = stack.pop()
+                if edge not in remaining:
+                    continue
+                remaining.remove(edge)
+                component.append(edge)
+                stack.extend(adjacent_edges[edge - 1] & remaining)
+            components.append(tuple(sorted(component)))
+
+        result = tuple(sorted(components))
+        if self._n_components is not None and (
+            type(self._n_components) is not int
+            or self._n_components != len(result)
+        ):
+            return None
+        return result
+
+    @property
+    def components(self) -> tuple[tuple[Edge, ...], ...]:
+        """Return the link components as groups of PD edge IDs."""
+        components = self._calculate_components()
+        if components is None:
+            raise ValueError("cannot determine components of an invalid diagram.")
+        return components
+
+    @property
+    def n_components(self) -> int:
+        """Return the number of link components."""
+        return len(self.components)
+
+    def is_valid(self) -> bool:
+        """Return whether this is a structurally valid link PD code."""
+        return self._calculate_components() is not None
 
     def _get_crossings_with_edge(self, edge: Edge) -> list[Crossing]:
         """Get a list of all crossings that are adjacent to a given edge."""
@@ -89,7 +158,10 @@ class Diagram:
 
         This method is meant for adjusting a diagram to be combined with another.
         """
-        return Diagram([tuple(edge + n for edge in crossing) for crossing in self.pd_code])
+        return Diagram(
+            [tuple(edge + n for edge in crossing) for crossing in self.pd_code],
+            n_components=self._n_components,
+        )
 
     def _index_is_facing(self, crossing_index: int, edge_index: int) -> bool:
         """Returns whether or not the given index represents an edge that is facing its crossing."""
