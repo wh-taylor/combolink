@@ -19,9 +19,66 @@ def _require_valid_diagram(self: LinkDiagram) -> None:
         raise ValueError("cannot compute link properties for an invalid diagram.")
 
 
-def gauss_code(self: LinkDiagram) -> list[int]:
+def _component_encounters(self: LinkDiagram) -> list[list[tuple[int, bool]]]:
+    """Return ``(crossing_id, is_over)`` encounters in component order."""
+    _require_valid_diagram(self)
+    components = self.components
+    ports_by_edge: dict[Edge, list[tuple[int, int]]] = {}
+    for crossing_index, crossing in enumerate(self.pd_code):
+        for position, edge in enumerate(crossing):
+            ports_by_edge.setdefault(edge, []).append((crossing_index, position))
+
+    other_port: dict[tuple[int, int], tuple[int, int]] = {}
+    for edge, ports in ports_by_edge.items():
+        if len(ports) != 2:
+            raise ValueError(f"PD edge {edge} must occur at exactly two positions.")
+        first, second = ports
+        other_port[first] = second
+        other_port[second] = first
+
+    next_port = {
+        (crossing_index, position): other_port[
+            (crossing_index, (position + 2) % 4)
+        ]
+        for crossing_index in range(len(self.pd_code))
+        for position in range(4)
+    }
+
+    component_encounters: list[list[tuple[int, bool]]] = []
+    for component in components:
+        start = min(ports_by_edge[component[0]])
+        port = start
+        visited_ports: set[tuple[int, int]] = set()
+        visited_edges: list[Edge] = []
+        encounters: list[tuple[int, bool]] = []
+
+        while port not in visited_ports:
+            visited_ports.add(port)
+            crossing_index, position = port
+            visited_edges.append(self.pd_code[crossing_index][position])
+            encounters.append((crossing_index + 1, position in (1, 3)))
+            port = next_port[port]
+
+        if (
+            port != start
+            or len(encounters) != len(component)
+            or set(visited_edges) != set(component)
+        ):
+            raise ValueError("PD positions do not form one traversal per component.")
+        component_encounters.append(encounters)
+
+    return component_encounters
+
+
+def gauss_code(self: LinkDiagram) -> list[list[int]]:
     """Return the Gauss code of a diagram.
 
+    Components follow ``LinkDiagram.components`` order. Each traversal starts
+    at the earliest PD occurrence of the component's smallest edge label and
+    follows crossing strands and matching edge labels. Crossing IDs are
+    one-based PD row indices; positive IDs denote overcrossings and negative
+    IDs denote undercrossings.
+
     Parameters
     ----------
     self : LinkDiagram
@@ -29,18 +86,27 @@ def gauss_code(self: LinkDiagram) -> list[int]:
 
     Returns
     -------
-    list of int
-        Crossing encounters in traversal order.
+    list of list of int
+        One signed crossing-ID sequence per component.
 
     Raises
     ------
-    NotImplementedError
-        This function is not implemented yet.
+    ValueError
+        If the diagram is invalid or its PD positions do not form one
+        traversal per component.
     """
-    raise NotImplementedError
+    return [
+        [crossing_id if is_over else -crossing_id for crossing_id, is_over in visits]
+        for visits in _component_encounters(self)
+    ]
+
 
 def dt_notation(self: LinkDiagram) -> list[int]:
-    """Return the Dowker-Thistlethwaite notation of a diagram.
+    """Return classical Dowker-Thistlethwaite notation for a knot diagram.
+
+    Encounters are numbered in the deterministic component traversal order.
+    For each odd-numbered encounter, the notation records its paired even
+    position, negated when that even encounter is an overcrossing.
 
     Parameters
     ----------
@@ -50,14 +116,48 @@ def dt_notation(self: LinkDiagram) -> list[int]:
     Returns
     -------
     list of int
-        The Dowker-Thistlethwaite sequence.
+        One signed even partner position per crossing.
 
     Raises
     ------
-    NotImplementedError
-        This function is not implemented yet.
+    ValueError
+        If the diagram is invalid, has multiple components, or its crossing
+        encounters do not satisfy the odd-even pairing required by classical
+        DT notation.
     """
-    raise NotImplementedError
+    encounters = _component_encounters(self)
+    if len(encounters) != 1:
+        raise ValueError("DT notation is only defined for single-component diagrams.")
+
+    visits = encounters[0]
+    if len(visits) % 2:
+        raise ValueError("DT notation requires an even number of crossing encounters.")
+
+    positions_by_crossing: dict[int, list[int]] = {}
+    for position, (crossing_id, _) in enumerate(visits, start=1):
+        positions_by_crossing.setdefault(crossing_id, []).append(position)
+
+    partner_by_position: dict[int, int] = {}
+    for crossing_id, positions in positions_by_crossing.items():
+        if len(positions) != 2:
+            raise ValueError(
+                f"crossing {crossing_id} must have exactly two encounters."
+            )
+        first, second = positions
+        if first % 2 == second % 2:
+            raise ValueError(
+                "crossing encounters must have opposite parity for classical "
+                "DT notation."
+            )
+        partner_by_position[first] = second
+        partner_by_position[second] = first
+
+    return [
+        -partner_by_position[position]
+        if visits[partner_by_position[position] - 1][1]
+        else partner_by_position[position]
+        for position in range(1, len(visits) + 1, 2)
+    ]
 
 def kauffman_bracket(self: LinkDiagram) -> Polynomial:
     """Compute the Kauffman bracket polynomial of a diagram.
