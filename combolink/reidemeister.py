@@ -1,8 +1,70 @@
+from collections.abc import Iterator as _Iterator
+from dataclasses import dataclass as _dataclass
+from enum import Enum as _Enum
 import math
 import random
 import time
 from combolink.diagram import *
 from combolink.properties import get_edges, is_infinity_unknot
+
+
+class MoveKind(str, _Enum):
+    LEFT_POSITIVE_TWIST = "left_positive_twist"
+    LEFT_NEGATIVE_TWIST = "left_negative_twist"
+    RIGHT_POSITIVE_TWIST = "right_positive_twist"
+    RIGHT_NEGATIVE_TWIST = "right_negative_twist"
+    UNTWIST = "untwist"
+    POKE = "poke"
+    UNPOKE = "unpoke"
+    SLIDE = "slide"
+
+    def __str__(self) -> str:
+        return "".join(part.title() for part in self.name.split("_"))
+
+    def __repr__(self) -> str:
+        return str(self)
+
+
+_MOVE_ARITIES = {
+    MoveKind.LEFT_POSITIVE_TWIST: 1,
+    MoveKind.LEFT_NEGATIVE_TWIST: 1,
+    MoveKind.RIGHT_POSITIVE_TWIST: 1,
+    MoveKind.RIGHT_NEGATIVE_TWIST: 1,
+    MoveKind.UNTWIST: 1,
+    MoveKind.POKE: 2,
+    MoveKind.UNPOKE: 2,
+    MoveKind.SLIDE: 3,
+}
+
+
+@_dataclass(frozen=True)
+class Move:
+    """A Reidemeister move and its ordered edge arguments."""
+
+    kind: MoveKind
+    edges: tuple[Edge, ...]
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.kind, MoveKind):
+            raise TypeError("kind must be a MoveKind.")
+        if not isinstance(self.edges, tuple):
+            raise TypeError("edges must be a tuple.")
+        if len(self.edges) != _MOVE_ARITIES[self.kind]:
+            raise ValueError(
+                f"{self.kind.value} requires {_MOVE_ARITIES[self.kind]} edge(s)."
+            )
+        if any(type(edge) is not int or edge < 1 for edge in self.edges):
+            raise ValueError("move edges must be positive integers.")
+        if self.kind in (MoveKind.POKE, MoveKind.UNPOKE, MoveKind.SLIDE):
+            if len(set(self.edges)) != len(self.edges):
+                raise ValueError(f"{self.kind.value} requires distinct edges.")
+
+    def __str__(self) -> str:
+        return f"Move({self.kind}, {self.edges!r})"
+
+    def __repr__(self) -> str:
+        return str(self)
+
 
 def _is_unpokable(self: Diagram, edge1: Edge, edge2: Edge) -> bool:
     """Return whether the edges have the crossing pattern for an R2 removal."""
@@ -618,6 +680,65 @@ def slide(self: Diagram, edge1: Edge, edge2: Edge, edge3: Edge) -> Diagram:
     pd_code = [tuple(crossing) for crossing in pd_code]
 
     return Diagram(pd_code)
+
+
+def get_moves(self: Diagram) -> list[Move]:
+    """Return all legal Reidemeister moves in a deterministic order."""
+    if not self.is_valid():
+        raise ValueError("cannot get moves for an invalid diagram.")
+
+    moves = [
+        Move(kind, (edge,))
+        for edge in get_twistables(self)
+        for kind in (
+            MoveKind.LEFT_POSITIVE_TWIST,
+            MoveKind.LEFT_NEGATIVE_TWIST,
+            MoveKind.RIGHT_POSITIVE_TWIST,
+            MoveKind.RIGHT_NEGATIVE_TWIST,
+        )
+    ]
+    moves.extend(Move(MoveKind.UNTWIST, (edge,)) for edge in get_untwistables(self))
+    moves.extend(Move(MoveKind.POKE, edges) for edges in get_pokables(self))
+    moves.extend(Move(MoveKind.UNPOKE, edges) for edges in get_unpokables(self))
+    moves.extend(Move(MoveKind.SLIDE, edges) for edges in get_slidables(self))
+
+    return list(dict.fromkeys(moves))
+
+
+def apply_move(self: Diagram, move: Move) -> Diagram:
+    """Apply a move to a diagram, raising an error if its arguments are invalid."""
+    if not isinstance(move, Move):
+        raise TypeError("move must be a Move.")
+    if not self.is_valid():
+        raise ValueError("cannot apply a move to an invalid diagram.")
+    if any(edge > 2 * len(self.pd_code) for edge in move.edges):
+        raise ValueError("move edges must belong to the diagram.")
+
+    match move.kind:
+        case MoveKind.LEFT_POSITIVE_TWIST:
+            return left_positive_twist(self, *move.edges)
+        case MoveKind.LEFT_NEGATIVE_TWIST:
+            return left_negative_twist(self, *move.edges)
+        case MoveKind.RIGHT_POSITIVE_TWIST:
+            return right_positive_twist(self, *move.edges)
+        case MoveKind.RIGHT_NEGATIVE_TWIST:
+            return right_negative_twist(self, *move.edges)
+        case MoveKind.UNTWIST:
+            return untwist(self, *move.edges)
+        case MoveKind.POKE:
+            return poke(self, *move.edges)
+        case MoveKind.UNPOKE:
+            return unpoke(self, *move.edges)
+        case MoveKind.SLIDE:
+            return slide(self, *move.edges)
+    raise ValueError(f"unsupported move kind: {move.kind!r}")
+
+
+def transitions(self: Diagram) -> _Iterator[tuple[Move, Diagram]]:
+    """Yield each legal move with the diagram it produces."""
+    for move in get_moves(self):
+        yield move, apply_move(self, move)
+
 
 def apply_random_move(
     self: Diagram, beta: float, rng: random.Random | None = None
