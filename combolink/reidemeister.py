@@ -347,7 +347,7 @@ def _relabel_after_contractions(
     merged_edges: dict[Edge, Edge],
     removed_edges: set[Edge],
 ) -> PDNotation:
-    """Relabel edges after removing crossings and merging adjacent arcs."""
+    """Relabel edges after removing crossings and merging adjacent edges."""
     component_orders: list[list[Edge]] = []
     for component in components:
         order = []
@@ -584,7 +584,7 @@ def untwist(self: LinkDiagram, edge: Edge) -> LinkDiagram:
     Raises
     ------
     ReidemeisterError
-        If the edge is not on a valid twist or its arcs cannot be reconnected.
+        If the edge is not on a valid twist or its edges cannot be reconnected.
     """
     crossing_index = next(
         (index for index, crossing in enumerate(self.pd_code) if crossing.count(edge) == 2),
@@ -835,7 +835,7 @@ def unpoke(self: LinkDiagram, edge1: Edge, edge2: Edge) -> LinkDiagram:
     ------
     ReidemeisterError
         If the edges do not identify exactly two crossings or the remaining
-        arcs cannot be reconnected.
+        edges cannot be reconnected.
     """
     removed_crossings = [
         crossing

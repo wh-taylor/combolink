@@ -15,7 +15,7 @@ class ReidemeisterError(Exception):
 class LinkDiagram:
     """A link diagram represented by planar-diagram (PD) crossings.
 
-    Each crossing is a four-edge tuple. Edge labels identify arcs between
+    Each crossing is a four-edge tuple. Edge labels identify edges between
     crossings, and a diagram's structure can be checked with :meth:`is_valid`.
     """
 

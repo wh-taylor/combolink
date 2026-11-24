@@ -1,6 +1,6 @@
 from .catalog import (
-    PRIME_KNOTS,
     OCHIAI_UNKNOT,
+    PRIME_KNOTS,
     THISTLETHWAITE_UNKNOT,
     first_n_knots,
     knot,
@@ -9,11 +9,17 @@ from .catalog import (
 )
 from .diagram import (
     Crossing,
-    LinkDiagram,
     Edge,
+    LinkDiagram,
     PDNotation,
     ReidemeisterError,
     SignedEdge,
+)
+from .graph import (
+    CombinatorialLinkDiagram,
+    GraphCrossing,
+    GraphEdge,
+    to_graph,
 )
 from .polynomial import Polynomial
 from .properties import (
@@ -52,18 +58,21 @@ from .reidemeister import (
 from .transformations import connected_sum, disjoint_union, join, reflect, reverse
 
 __all__ = [
-    "Crossing",
-    "LinkDiagram",
-    "Edge",
+    "OCHIAI_UNKNOT",
     "PRIME_KNOTS",
+    "THISTLETHWAITE_UNKNOT",
+    "CombinatorialLinkDiagram",
+    "Crossing",
+    "Edge",
+    "GraphCrossing",
+    "GraphEdge",
+    "LinkDiagram",
     "Move",
     "MoveKind",
-    "OCHIAI_UNKNOT",
     "PDNotation",
     "Polynomial",
     "ReidemeisterError",
     "SignedEdge",
-    "THISTLETHWAITE_UNKNOT",
     "apply_move",
     "apply_random_move",
     "connected_sum",
@@ -94,9 +103,10 @@ __all__ = [
     "right_negative_twist",
     "right_positive_twist",
     "slide",
-    "transitions",
+    "to_graph",
     "torus_knot",
     "torus_link",
+    "transitions",
     "unknot_solver",
     "unpoke",
     "untwist",

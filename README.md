@@ -70,6 +70,34 @@ if hopf_link.is_valid():
 Edge IDs in a link diagram are integers. Check `is_valid()` before computing
 properties; property functions raise `ValueError` for invalid diagrams.
 
+## Graph representation
+
+`to_graph` compiles a valid `LinkDiagram` into the framework-neutral
+combinatorial model `(V, E, ψ, w, S, π)`. Crossings
+are represented by `GraphCrossing` vertices; directed diagram edges remain
+`GraphEdge` edges. Each crossing record contains its writhe and principal edge,
+while each edge record contains its incidence and strand successor:
+
+```python
+model = cl.to_graph(hopf_link)
+edge_incidence = {edge.label: edge.incidence for edge in model.edges}
+edge_successors = {edge.label: edge.successor for edge in model.edges}
+crossing_under_edges = {
+    crossing.index: crossing.principal_edge for crossing in model.vertices
+}
+```
+
+PD edge labels are retained as edge identities, and `model.to_pd_code()`
+reconstructs the original PD code. `face_cycles` are
+computed directly from PD crossing rotations as cycles of crossing positions,
+avoiding construction of a separate edge-side turn map. For disconnected
+projections, these boundary walks need not be distinct geometric faces because
+PD codes do not encode nesting. Spherical planarity is checked componentwise
+as `|V| - |E| + |F| = 2c`, where `F` counts these boundary cycles.
+
+A node-centric GNN can use a separate adapter that lifts edges into nodes; that
+encoding is not the canonical combinatorial model returned by `to_graph`.
+
 ## Working with diagrams
 
 The top-level `combolink` module exports the main API. For example, diagrams
