@@ -1,0 +1,73 @@
+import pytest
+
+from combolink import Diagram, connected_sum, disjoint_union, join, knot
+
+
+HOPF_LINK = Diagram([(1, 4, 2, 3), (3, 2, 4, 1)])
+
+
+def test_disjoint_union_relabels_edges_and_preserves_components():
+    first = knot(3, 1)
+    second = HOPF_LINK
+
+    union = disjoint_union(first, second)
+
+    assert union.is_valid()
+    assert union.n_components == first.n_components + second.n_components
+    assert len(union.pd_code) == len(first.pd_code) + len(second.pd_code)
+    assert union.pd_code[: len(first.pd_code)] == first.pd_code
+    assert union.pd_code[len(first.pd_code) :] == [
+        tuple(edge + 2 * len(first.pd_code) for edge in crossing)
+        for crossing in second.pd_code
+    ]
+
+
+def test_join_merges_only_the_selected_components():
+    first = HOPF_LINK
+    second = knot(3, 1)
+
+    joined = join(first, second, 1, 1)
+
+    assert joined.is_valid()
+    assert joined.n_components == first.n_components + second.n_components - 1
+    assert len(joined.pd_code) == len(first.pd_code) + len(second.pd_code)
+    assert first == HOPF_LINK
+    assert second == knot(3, 1)
+
+
+def test_join_works_for_every_edge_pair_in_hopf_link_and_trefoil():
+    first = HOPF_LINK
+    second = knot(3, 1)
+
+    for self_edge in range(1, 2 * len(first.pd_code) + 1):
+        for other_edge in range(1, 2 * len(second.pd_code) + 1):
+            joined = join(first, second, self_edge, other_edge)
+
+            assert joined.is_valid()
+            assert joined.n_components == first.n_components + second.n_components - 1
+            for edge in range(1, 2 * len(joined.pd_code) + 1):
+                joined._get_forth_index(edge)
+
+
+def test_connected_sum_accepts_generic_knot_diagrams():
+    composite_knot = join(knot(3, 1), knot(3, 1), 1, 1)
+    other_knot = knot(4, 1)
+
+    result = connected_sum(composite_knot, other_knot)
+
+    assert result.is_valid()
+    assert result.n_components == 1
+    assert len(result.pd_code) == len(composite_knot.pd_code) + len(other_knot.pd_code)
+
+
+def test_connected_sum_rejects_link_diagrams():
+    with pytest.raises(ValueError, match="requires knot diagrams"):
+        connected_sum(HOPF_LINK, knot(3, 1))
+
+
+def test_join_rejects_edges_outside_their_diagrams():
+    with pytest.raises(ValueError, match="self_edge"):
+        join(knot(3, 1), knot(4, 1), 0, 1)
+
+    with pytest.raises(ValueError, match="other_edge"):
+        join(knot(3, 1), knot(4, 1), 1, 9)

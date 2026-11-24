@@ -78,6 +78,17 @@ poked = cl.poke(trefoil, under_edge=1, over_edge=4)
 same_bracket = cl.kauffman_bracket(poked) == cl.kauffman_bracket(trefoil)
 ```
 
+Combine diagrams with `disjoint_union`, or join the components containing the
+selected edges with `join`. For connected sums, use `connected_sum` with
+single-component knot diagrams:
+
+```python
+figure_eight = cl.knot(4, 1)
+union = cl.disjoint_union(trefoil, figure_eight)
+joined = cl.join(trefoil, figure_eight, self_edge=1, other_edge=1)
+sum_knot = cl.connected_sum(trefoil, figure_eight)
+```
+
 Available move functions include `poke`, `unpoke`, `slide`, `untwist`, and
 the four positive/negative left/right twist functions. Helpers such as
 `get_pokables` and `get_untwistables` list candidate edges for moves.

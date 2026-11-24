@@ -47,7 +47,7 @@ from .reidemeister import (
     unpoke,
     untwist,
 )
-from .transformations import disjoint_union, join, reflect, reverse
+from .transformations import connected_sum, disjoint_union, join, reflect, reverse
 
 __all__ = [
     "Crossing",
@@ -64,6 +64,7 @@ __all__ = [
     "THISTLETHWAITE_UNKNOT",
     "apply_move",
     "apply_random_move",
+    "connected_sum",
     "disjoint_union",
     "dt_notation",
     "first_n_knots",
