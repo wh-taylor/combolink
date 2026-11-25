@@ -3,10 +3,7 @@ from pathlib import Path
 import subprocess
 import sys
 
-import pytest
-
-from combolink import torus_knot, torus_link
-from combolink.catalog import first_n_knots, knot
+from tests.__init__ import *
 
 
 def test_catalog_loads_outside_repository_directory(tmp_path):

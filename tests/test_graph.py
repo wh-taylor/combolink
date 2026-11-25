@@ -1,6 +1,4 @@
-import pytest
-
-from combolink import LinkDiagram, get_writhe, knot, reflect, to_graph
+from tests.__init__ import *
 
 
 def test_to_graph_encodes_the_six_tuple_and_pd_rotation_face_cycles():

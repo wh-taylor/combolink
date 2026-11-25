@@ -4,7 +4,7 @@ from enum import Enum
 import math
 import random
 import time
-from combolink.diagram import *
+from combolink.diagram import LinkDiagram, Edge, Crossing, PDNotation, ReidemeisterError
 from combolink.properties import get_edges
 from combolink.catalog import INFINITY_UNKNOT, MIRROR_INFINITY_UNKNOT
 

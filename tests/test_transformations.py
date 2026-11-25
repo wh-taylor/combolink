@@ -1,6 +1,4 @@
-import pytest
-
-from combolink import LinkDiagram, connected_sum, disjoint_union, join, knot
+from tests.__init__ import *
 
 
 HOPF_LINK = LinkDiagram([(1, 4, 2, 3), (3, 2, 4, 1)])

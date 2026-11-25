@@ -1,5 +1,4 @@
-from combolink.diagram import *
-
+from combolink.diagram import LinkDiagram, Edge, PDNotation
 
 def reverse(self: LinkDiagram) -> LinkDiagram:
     """Reverse the orientation of a diagram.

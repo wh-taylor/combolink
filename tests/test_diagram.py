@@ -1,5 +1,6 @@
 from tests.__init__ import *
 
+
 def test_diagram_equality_with_non_diagram_objects():
     diagram = LinkDiagram([(1, 2, 2, 1)])
 

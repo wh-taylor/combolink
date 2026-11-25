@@ -1,6 +1,7 @@
 from itertools import product
-from combolink.diagram import *
+from combolink.diagram import LinkDiagram, Edge
 from combolink.catalog import INFINITY_UNKNOT, MIRROR_INFINITY_UNKNOT
+from combolink.polynomial import Polynomial
 
 def _require_valid_diagram(self: LinkDiagram) -> None:
     """Raise an error unless ``self`` is a structurally valid diagram.

@@ -1,8 +1,4 @@
-import pytest
-
-from combolink import Move, MoveKind, apply_move, get_moves, transitions
-from combolink.catalog import knot
-from combolink.diagram import LinkDiagram
+from tests.__init__ import *
 
 
 def test_moves_are_deterministic_and_transitions_apply_them():
