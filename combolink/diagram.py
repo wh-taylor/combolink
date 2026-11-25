@@ -1,5 +1,7 @@
 from __future__ import annotations
 from types import NotImplementedType
+from typing import Concatenate, cast
+from collections.abc import Callable
 
 Edge = int
 SignedEdge = int
@@ -63,6 +65,47 @@ class LinkDiagram:
             if self.shift(n).identical(other):
                 return True
         return False
+
+    def pipe[**P, R](self, f: Callable[Concatenate[LinkDiagram, P], R], *args: P.args, **kwargs: P.kwargs) -> R:
+        """Apply a function to the diagram.
+        
+        Parameters
+        ----------
+        f : Callable[Concatenate[LinkDiagram, P], R]
+            Function to apply to diagram.
+        *args : P.args
+            Arguments for the function `f`.
+        *kwargs : P.kwargs
+            Keyword arguments for the function `f`.
+        
+        Returns
+        -------
+        R
+            The return type of `f`.
+        """
+        return f(self, *args, **kwargs)
+
+    def __add__(self, other: object) -> LinkDiagram | NotImplementedType:
+        from combolink.transformations import disjoint_union
+        
+        if not isinstance(other, LinkDiagram):
+            return NotImplemented
+        
+        # Handle annoying type checking error
+        disjoint_union = cast(Callable[[LinkDiagram, LinkDiagram], LinkDiagram], disjoint_union)
+
+        return disjoint_union(self, other)
+
+    def __matmul__(self, other: object) -> LinkDiagram | NotImplementedType:
+        from combolink.transformations import connected_sum
+
+        if not isinstance(other, LinkDiagram):
+            return NotImplemented
+        
+        # Handle annoying type checking error
+        connected_sum = cast(Callable[[LinkDiagram, LinkDiagram], LinkDiagram], connected_sum)
+
+        return connected_sum(self, other)
     
     def _shiftmod(self, edge: Edge, n: int) -> Edge:
         """Shift an edge within its oriented component cycle."""

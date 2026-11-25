@@ -31,7 +31,7 @@ def reflect(self: LinkDiagram) -> LinkDiagram:
     """
     return LinkDiagram([(a, d, c, b) for (a, b, c, d) in self.pd_code])
 
-def disjoint_union(self, *others: LinkDiagram):
+def disjoint_union(self: LinkDiagram, *others: LinkDiagram) -> LinkDiagram:
     """Return the disjoint union of this diagram and any additional diagrams.
 
     Parameters
