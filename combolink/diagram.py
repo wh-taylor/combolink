@@ -3,7 +3,7 @@ from types import NotImplementedType
 from typing import Concatenate, cast
 from collections.abc import Callable, Iterator
 from collections import defaultdict
-from itertools import permutations, product
+from itertools import permutations, product, combinations
 
 Edge = int
 SignedEdge = int
@@ -107,8 +107,11 @@ class LinkDiagram:
             for values that are not diagrams.
         """
         if not isinstance(other, LinkDiagram):
-            return NotImplemented
-        return self.normalize().crossings == other.normalize().crossings
+            return False
+        try:
+            return self.normalize().crossings == other.normalize().crossings
+        except ValueError:
+            return False
 
     def __invert__(self) -> LinkDiagram:
         return self._reflect()
@@ -174,10 +177,10 @@ class LinkDiagram:
         return self.components[key]
 
     def __contains__(self, other: LinkDiagram) -> bool:
-        return any(other == component for component in self.components)
+        return any(other == sublink for sublink in self.sublinks)
 
     def __le__(self, other: LinkDiagram) -> bool:
-        return all(component in other for component in self.components)
+        return all(sublink in other for sublink in self.sublinks)
 
     def __lt__(self, other: LinkDiagram) -> bool:
         return self <= other and self != other
@@ -189,7 +192,10 @@ class LinkDiagram:
         return other < self
 
     def __hash__(self) -> int:
-        return hash(self.normalize().crossings)
+        try:
+            return hash(self.normalize().crossings)
+        except ValueError:
+            return hash(self.crossings)
 
     def __rshift__(self, n: int) -> LinkDiagram:
         return self.shift(n)
@@ -529,6 +535,99 @@ class LinkDiagram:
             If the diagram is invalid.
         """
         return len(self._pd_code)
+
+    def sublink(self, *component_indices: int) -> LinkDiagram:
+        """Extract a sublink consisting of the components at ``component_indices``.
+
+        Crossings internal to the selected components are preserved, while
+        crossings involving unselected components are smoothed/removed and
+        the surviving edges are re-indexed contiguously starting from 1.
+        """
+        comp_edges = self.components_edges
+        n_comps = len(comp_edges)
+
+        if not component_indices:
+            return self._EMPTY_LINK
+
+        selected_indices = sorted(set(component_indices))
+        for idx in selected_indices:
+            if not 0 <= idx < n_comps:
+                raise IndexError(
+                    f"Component index {idx} out of range for {n_comps} components."
+                )
+
+        if len(selected_indices) == n_comps:
+            return self.normalize()
+
+        # Gather all edges belonging to the selected components
+        selected_comp_tuples = [comp_edges[i] for i in selected_indices]
+        allowed_edges = {e for comp in selected_comp_tuples for e in comp}
+
+        # Keep only crossings where all 4 strands belong to the selected sublink
+        kept_crossings = [
+            c for c in self.crossings if all(e in allowed_edges for e in c)
+        ]
+
+        # Build a fast next-edge lookup across all components
+        next_edge: dict[Edge, Edge] = {}
+        for comp in comp_edges:
+            m = len(comp)
+            for i, e in enumerate(comp):
+                next_edge[e] = comp[(i + 1) % m]
+
+        # Edges that enter a kept crossing (increment points for new labels)
+        kept_incoming: set[Edge] = set()
+        for c in kept_crossings:
+            kept_incoming.add(c[0])
+            kept_incoming.add(c[1] if next_edge[c[1]] == c[3] else c[3])
+
+        # Re-index each selected component contiguously (1..m_1, m_1+1..m_2, ...)
+        edge_map: dict[Edge, Edge] = {}
+        label = 1
+        unknot_count = 0
+
+        for comp in selected_comp_tuples:
+            comp_incoming = [e for e in comp if e in kept_incoming]
+            if not comp_incoming:
+                # This component has no crossings left in the sublink -> unknot
+                unknot_count += 1
+                continue
+
+            start = next_edge[comp_incoming[0]]
+            curr = start
+            for _ in range(len(comp)):
+                edge_map[curr] = label
+                if curr in kept_incoming:
+                    label += 1
+                curr = next_edge[curr]
+
+        sub_pd: PDNotation = [
+            (edge_map[c[0]], edge_map[c[1]], edge_map[c[2]], edge_map[c[3]])
+            for c in kept_crossings
+        ]
+
+        result = LinkDiagram(sub_pd).normalize() if sub_pd else self._EMPTY_LINK
+        for _ in range(unknot_count):
+            result = result + self._UNKNOT
+
+        return result
+
+    @property
+    def sublinks(self) -> list[LinkDiagram]:
+        """Return all sublinks (the powerset of components) ordered by size.
+
+        Parameters
+        ----------
+        include_empty : bool, default=True
+            Whether to include the 0-component empty link as the first element.
+        """
+        n_comps = self.n_components
+        start_size = 0
+        return [
+            self.sublink(*indices)
+            for k in range(start_size, n_comps + 1)
+            for indices in combinations(range(n_comps), k)
+        ]
 
     def is_valid(self) -> bool:
         """Check the structural validity of the PD code.
