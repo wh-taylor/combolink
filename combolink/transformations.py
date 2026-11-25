@@ -280,7 +280,7 @@ def _connected_sum(self: LinkDiagram, other: LinkDiagram) -> LinkDiagram:
     if self.n_components != 1 or other.n_components != 1:
         raise ValueError("connected_sum requires knot diagrams.")
 
-    return join(self, other, self.components[0][0], other.components[0][0])
+    return join(self, other, self.components_edges[0][0], other.components_edges[0][0])
 
 def join(self: LinkDiagram, other: LinkDiagram, self_edge: Edge, other_edge: Edge) -> LinkDiagram:
     """Join the components containing two selected edges.

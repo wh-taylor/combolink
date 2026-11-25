@@ -85,42 +85,51 @@ class LinkDiagram:
         """
         return f(self, *args, **kwargs)
 
-    def __invert__(self) -> LinkDiagram:
-        from combolink.transformations import reflect
-        
-        # Handle annoying type checking error
-        reflect = cast(Callable[[LinkDiagram], LinkDiagram], reflect)
+    # Bring identifiers in from other namespaces without breaking circular dependencies
 
-        return reflect(self)
+    def _reflect(self) -> LinkDiagram:
+        from combolink.transformations import reflect
+        return cast(Callable[[LinkDiagram], LinkDiagram], reflect)(self)
+
+    def _reverse(self) -> LinkDiagram:
+            from combolink.transformations import reverse
+            return cast(Callable[[LinkDiagram], LinkDiagram], reverse)(self)
+
+    def _disjoint_union(self, other: LinkDiagram) -> LinkDiagram:
+        from combolink.transformations import disjoint_union
+        return cast(Callable[[LinkDiagram, LinkDiagram], LinkDiagram], disjoint_union)(self, other)
+
+    def _connected_sum(self, other: LinkDiagram) -> LinkDiagram:
+        from combolink.transformations import connected_sum
+        return cast(Callable[[LinkDiagram, LinkDiagram], LinkDiagram], connected_sum)(self, other)
+
+    @property
+    def _UNKNOT(self) -> LinkDiagram:
+        from combolink.catalog import UNKNOT
+        return cast(LinkDiagram, UNKNOT)
+
+    @property
+    def _EMPTY_LINK(self) -> LinkDiagram:
+        from combolink.catalog import EMPTY_LINK
+        return cast(LinkDiagram, EMPTY_LINK)
+
+    # Dunder methods
+
+    def __invert__(self) -> LinkDiagram:
+        return self._reflect()
 
     def __neg__(self) -> LinkDiagram:
-        from combolink.transformations import reverse
-        
-        # Handle annoying type checking error
-        reverse = cast(Callable[[LinkDiagram], LinkDiagram], reverse)
-
-        return reverse(self)
+        return self._reverse()
 
     def __add__(self, other: object) -> LinkDiagram:
-        from combolink.transformations import disjoint_union
-        
-        # Handle annoying type checking error
-        disjoint_union = cast(Callable[[LinkDiagram, LinkDiagram], LinkDiagram], disjoint_union)
+        if not isinstance(other, LinkDiagram): return NotImplemented
 
-        if not isinstance(other, LinkDiagram):
-            return NotImplemented
-
-        return disjoint_union(self, other)
+        return self._disjoint_union(other)
 
     def __mul__(self, other: object) -> LinkDiagram:
-        from combolink.catalog import EMPTY_LINK
+        if not isinstance(other, int): return NotImplemented
 
-        if not isinstance(other, int):
-            return NotImplemented
-
-        if other == 0:
-            return cast(LinkDiagram, EMPTY_LINK)
-
+        if other == 0: return self._EMPTY_LINK
         if other < 0:
             self = -self
             other = -other
@@ -134,25 +143,13 @@ class LinkDiagram:
         return self * other
 
     def __matmul__(self, other: object) -> LinkDiagram:
-        from combolink.transformations import connected_sum
-        
-        # Handle annoying type checking error
-        connected_sum = cast(Callable[[LinkDiagram, LinkDiagram], LinkDiagram], connected_sum)
-
-        if not isinstance(other, LinkDiagram):
-            return NotImplemented
-
-        return connected_sum(self, other)
+        if not isinstance(other, LinkDiagram): return NotImplemented
+        return self._connected_sum(other)
 
     def __pow__(self, other: object) -> LinkDiagram:
-        from combolink.catalog import UNKNOT
+        if not isinstance(other, int): return NotImplemented
 
-        if not isinstance(other, int):
-            return NotImplemented
-
-        if other == 0:
-            return cast(LinkDiagram, UNKNOT)
-
+        if other == 0: return self._UNKNOT
         if other < 0:
             self = ~-self
             other = -other
@@ -182,10 +179,13 @@ class LinkDiagram:
 
     def __iter__(self) -> Iterator[Crossing]:
         return (v for v in self.pd_code)
+
+    def __contains__(self, other: LinkDiagram) -> bool:
+        return any(other == component for component in self.components)
     
     def _shiftmod(self, edge: Edge, n: int) -> Edge:
         """Shift an edge within its oriented component cycle."""
-        for component in self.components:
+        for component in self.components_edges:
             if edge in component:
                 index = component.index(edge)
                 return component[(index + n) % len(component)]
@@ -296,7 +296,7 @@ class LinkDiagram:
         return result
 
     @property
-    def components(self) -> tuple[tuple[Edge, ...], ...]:
+    def components_edges(self) -> tuple[tuple[Edge, ...], ...]:
         """Return edge labels grouped by link component.
 
         Returns
@@ -315,6 +315,36 @@ class LinkDiagram:
         return components
 
     @property
+    def components(self) -> tuple[LinkDiagram, ...]:
+        """Return link diagrams per link component.
+        
+        Returns
+        -------
+        tuple of LinkDiagram
+            Link diagram of each link component.
+
+        Raises
+        ------
+        ValueError
+            If the diagram is invalid.
+        """
+        subdiagrams: list[LinkDiagram] = []
+        for desired_edges in self.components_edges:
+            crossings = []
+            for v in self.crossings:
+                if all(e in desired_edges for e in v):
+                    crossings.append(v)
+
+            if crossings:
+                new_diagram = LinkDiagram(crossings)
+                if not new_diagram.is_valid():
+                    raise ValueError('cannot calculate components of an invalid diagram.')
+                subdiagrams.append(new_diagram)
+            else:
+                subdiagrams.append(self._UNKNOT)
+        return tuple(subdiagrams)
+
+    @property
     def n_components(self) -> int:
         """Return the number of link components.
 
@@ -328,7 +358,7 @@ class LinkDiagram:
         ValueError
             If the diagram is invalid.
         """
-        return len(self.components)
+        return len(self.components_edges)
 
     @property
     def crossings(self) -> tuple[tuple[Edge, ...], ...]:
