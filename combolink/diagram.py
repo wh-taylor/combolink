@@ -209,6 +209,22 @@ class LinkDiagram:
         """
         return len(self.components)
 
+    @property
+    def n_crossings(self) -> int:
+        """Return the number of crossings.
+        
+        Returns
+        -------
+        int
+            Number of crossings in the diagram.
+
+        Raises
+        ------
+        ValueError
+            If the diagram is invalid.
+        """
+        return len(self.pd_code)
+
     def is_valid(self) -> bool:
         """Check the structural validity of the PD code.
 
