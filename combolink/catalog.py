@@ -395,6 +395,17 @@ CONWAY = LinkDiagram([(4, 2, 5, 1), (8, 4, 9, 3), (17, 1, 18, 22), (12, 5, 13, 6
 # https://en.wikipedia.org/wiki/Kinoshita%E2%80%93Terasaka_knot
 KINOSHITA_TERASAKA = LinkDiagram([(4, 2, 5, 1), (8, 4, 9, 3), (9, 18, 10, 19), (12, 5, 13, 6), (6, 13, 7, 14), (19, 15, 20, 14), (11, 21, 12, 20), (17, 22, 18, 1), (21, 16, 22, 17), (15, 10, 16, 11), (2, 8, 3, 7)])
 
+# Composite knots
+
+# TREFOIL @ TREFOIL
+GRANNY = LinkDiagram([(8, 11, 9, 12), (10, 1, 11, 2), (12, 9, 1, 10), (2, 5, 3, 6), (4, 7, 5, 8), (6, 3, 7, 4)])
+
+# TREFOIL @ ~TREFOIL
+SQUARE = LinkDiagram([(8, 11, 9, 12), (10, 1, 11, 2), (12, 9, 1, 10), (2, 6, 3, 5), (4, 8, 5, 7), (6, 4, 7, 3)])
+
+# TREFOIL @ FIGURE_EIGHT
+COMPOSITE_7 = LinkDiagram([(10, 13, 11, 14), (12, 1, 13, 2), (14, 11, 1, 12), (9, 6, 10, 7), (3, 9, 4, 8), (5, 2, 6, 3), (7, 5, 8, 4)])
+
 # Links
 
 EMPTY_LINK = LinkDiagram([])

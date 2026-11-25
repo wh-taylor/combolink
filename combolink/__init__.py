@@ -16,6 +16,8 @@ from .catalog import (
     PERKO_PAIR,
     CONWAY,
     KINOSHITA_TERASAKA,
+    GRANNY,
+    SQUARE,
     EMPTY_LINK,
     UNLINK,
     HOPF_LINK,
