@@ -10,6 +10,12 @@ readme = "README.md"
 requires-python = ">=3.12"
 license = { file = "LICENSE" }
 
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[project.urls]
+Repository = "https://github.com/wh-taylor/combolink"
+
 [tool.setuptools.packages.find]
 include = ["combolink*"]
 
