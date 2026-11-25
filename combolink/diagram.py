@@ -176,8 +176,26 @@ class LinkDiagram:
     def __contains__(self, other: LinkDiagram) -> bool:
         return any(other == component for component in self.components)
 
+    def __le__(self, other: LinkDiagram) -> bool:
+        return all(component in other for component in self.components)
+
+    def __lt__(self, other: LinkDiagram) -> bool:
+        return self <= other and self != other
+
+    def __ge__(self, other: LinkDiagram) -> bool:
+        return other <= self
+    
+    def __gt__(self, other: LinkDiagram) -> bool:
+        return other < self
+
     def __hash__(self) -> int:
         return hash(self.normalize().crossings)
+
+    def __rshift__(self, n: int) -> LinkDiagram:
+        return self.shift(n)
+
+    def __lshift__(self, n: int) -> LinkDiagram:
+        return self.shift(-n)
 
     def __pos__(self) -> LinkDiagram:
         return self.normalize()
@@ -410,6 +428,8 @@ class LinkDiagram:
         ValueError
             If the diagram is invalid.
         """
+        if self == self._UNKNOT: return (self._UNKNOT,)
+        
         subdiagrams: list[LinkDiagram] = []
 
         for desired_edges in self.components_edges:
