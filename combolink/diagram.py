@@ -182,6 +182,9 @@ class LinkDiagram:
 
     def __contains__(self, other: LinkDiagram) -> bool:
         return any(other == component for component in self.components)
+
+    def __hash__(self) -> int:
+        return hash(self.crossings)
     
     def _shiftmod(self, edge: Edge, n: int) -> Edge:
         """Shift an edge within its oriented component cycle."""
