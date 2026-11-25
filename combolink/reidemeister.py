@@ -5,7 +5,8 @@ import math
 import random
 import time
 from combolink.diagram import *
-from combolink.properties import get_edges, is_infinity_unknot
+from combolink.properties import get_edges
+from combolink.catalog import INFINITY_UNKNOT, MIRROR_INFINITY_UNKNOT
 
 
 class MoveKind(str, Enum):
@@ -169,6 +170,9 @@ def _projection_component_ids(self: LinkDiagram) -> dict[Edge, int]:
         for edge, indices in crossing_indices_by_edge.items()
     }
 
+def _is_infinity_unknot(self: LinkDiagram) -> bool:
+    return self == INFINITY_UNKNOT or self == MIRROR_INFINITY_UNKNOT
+
 
 def get_twistables(self: LinkDiagram) -> list[Edge]:
     """Return edges on which a Reidemeister I twist can be applied.
@@ -199,7 +203,7 @@ def get_untwistables(self: LinkDiagram) -> list[Edge]:
         Edge labels that can be untwisted. One-crossing infinity-unknot
         encodings return an empty list.
     """
-    if is_infinity_unknot(self):
+    if _is_infinity_unknot(self):
         return []
 
     untwistables = []
@@ -470,7 +474,7 @@ def left_positive_twist(self: LinkDiagram, edge: Edge) -> LinkDiagram:
     ReidemeisterError
         If the resulting crossing pattern cannot be oriented.
     """
-    if is_infinity_unknot(self):
+    if _is_infinity_unknot(self):
         if edge == 1:
             return LinkDiagram([(1, 2, 2, 3), (3, 1, 4, 4)])
         if edge == 2:
@@ -499,7 +503,7 @@ def left_negative_twist(self: LinkDiagram, edge: Edge) -> LinkDiagram:
     ReidemeisterError
         If the resulting crossing pattern cannot be oriented.
     """
-    if is_infinity_unknot(self):
+    if _is_infinity_unknot(self):
         if edge == 1:
             return LinkDiagram([(1, 2, 2, 3), (4, 3, 1, 4)])
         if edge == 2:
@@ -528,7 +532,7 @@ def right_positive_twist(self: LinkDiagram, edge: Edge) -> LinkDiagram:
     ReidemeisterError
         If the resulting crossing pattern cannot be oriented.
     """
-    if is_infinity_unknot(self):
+    if _is_infinity_unknot(self):
         if edge == 1:
             return LinkDiagram([(1, 2, 2, 3), (3, 4, 4, 1)])
         if edge == 2:
@@ -557,7 +561,7 @@ def right_negative_twist(self: LinkDiagram, edge: Edge) -> LinkDiagram:
     ReidemeisterError
         If the resulting crossing pattern cannot be oriented.
     """
-    if is_infinity_unknot(self):
+    if _is_infinity_unknot(self):
         if edge == 1:
             return LinkDiagram([(1, 2, 2, 3), (4, 4, 1, 3)])
         if edge == 2:

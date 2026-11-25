@@ -1,6 +1,6 @@
 from itertools import product
 from combolink.diagram import *
-
+from combolink.catalog import INFINITY_UNKNOT, MIRROR_INFINITY_UNKNOT
 
 def _require_valid_diagram(self: LinkDiagram) -> None:
     """Raise an error unless ``self`` is a structurally valid diagram.
@@ -178,7 +178,8 @@ def kauffman_bracket(self: LinkDiagram) -> Polynomial:
         If ``self`` is not a valid diagram.
     """
     _require_valid_diagram(self)
-    if self == LinkDiagram([(1, 1, 2, 2)]): return Polynomial({3: -1})
+    if self == INFINITY_UNKNOT: return Polynomial({-3: -1})
+    if self == MIRROR_INFINITY_UNKNOT: return Polynomial({3: -1})
 
     factored_poly = [(((a, d), (b, c)), ((a, b), (c, d))) for a, b, c, d in self.pd_code]
 
@@ -242,6 +243,9 @@ def get_writhe(self: LinkDiagram) -> int:
         If ``self`` is not a valid diagram.
     """
     _require_valid_diagram(self)
+    if self == INFINITY_UNKNOT: return 1
+    if self == MIRROR_INFINITY_UNKNOT: return -1
+
     writhe = 0
     for _, b, _, d in self.pd_code:
         if self._next(b) == d:
@@ -288,22 +292,6 @@ def get_edges(self: LinkDiagram) -> list[Edge]:
         The integer labels from one through twice the crossing count.
     """
     return [i + 1 for i in range(2 * len(self.pd_code))]
-
-def is_infinity_unknot(self: LinkDiagram) -> bool:
-    """Check whether ``self`` uses a recognized one-crossing unknot encoding.
-
-    Parameters
-    ----------
-    self : LinkDiagram
-        LinkDiagram to check.
-
-    Returns
-    -------
-    bool
-        Whether the diagram matches either of the library's one-crossing
-        unknot encodings, up to cyclic edge-label shifts.
-    """
-    return self == LinkDiagram([(1, 2, 2, 1)]) or self == LinkDiagram([(2, 2, 1, 1)])
 
 def get_plaintext_code(self: LinkDiagram) -> str:
     """Serialize a diagram as a compact semicolon-delimited PD code.

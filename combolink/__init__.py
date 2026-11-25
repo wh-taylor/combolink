@@ -49,7 +49,6 @@ from .properties import (
     get_edges,
     get_plaintext_code,
     get_writhe,
-    is_infinity_unknot,
     jones,
     kauffman_bracket,
 )
@@ -110,7 +109,6 @@ __all__ = [
     "get_unpokables",
     "get_untwistables",
     "get_writhe",
-    "is_infinity_unknot",
     "join",
     "jones",
     "kauffman_bracket",
