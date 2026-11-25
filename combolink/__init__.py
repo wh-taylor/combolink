@@ -1,7 +1,5 @@
 from .catalog import (
-    INFINITY_UNKNOT,
-    MIRROR_INFINITY_UNKNOT,
-    DOUBLE_INFINITY_UNKNOT,
+    UNKNOT,
     OCHIAI_UNKNOT,
     PRIME_KNOTS,
     THISTLETHWAITE_UNKNOT,
@@ -18,6 +16,7 @@ from .catalog import (
     PERKO_PAIR,
     CONWAY,
     KINOSHITA_TERASAKA,
+    EMPTY_LINK,
     UNLINK,
     HOPF_LINK,
     BORROMEAN_RINGS,

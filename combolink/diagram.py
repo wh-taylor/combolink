@@ -1,7 +1,7 @@
 from __future__ import annotations
 from types import NotImplementedType
 from typing import Concatenate, cast
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 
 Edge = int
 SignedEdge = int
@@ -85,27 +85,103 @@ class LinkDiagram:
         """
         return f(self, *args, **kwargs)
 
-    def __add__(self, other: object) -> LinkDiagram | NotImplementedType:
-        from combolink.transformations import disjoint_union
+    def __invert__(self) -> LinkDiagram:
+        from combolink.transformations import reflect
         
-        if not isinstance(other, LinkDiagram):
-            return NotImplemented
+        # Handle annoying type checking error
+        reflect = cast(Callable[[LinkDiagram], LinkDiagram], reflect)
+
+        return reflect(self)
+
+    def __neg__(self) -> LinkDiagram:
+        from combolink.transformations import reverse
+        
+        # Handle annoying type checking error
+        reverse = cast(Callable[[LinkDiagram], LinkDiagram], reverse)
+
+        return reverse(self)
+
+    def __add__(self, other: object) -> LinkDiagram:
+        from combolink.transformations import disjoint_union
         
         # Handle annoying type checking error
         disjoint_union = cast(Callable[[LinkDiagram, LinkDiagram], LinkDiagram], disjoint_union)
 
-        return disjoint_union(self, other)
-
-    def __matmul__(self, other: object) -> LinkDiagram | NotImplementedType:
-        from combolink.transformations import connected_sum
-
         if not isinstance(other, LinkDiagram):
             return NotImplemented
+
+        return disjoint_union(self, other)
+
+    def __mul__(self, other: object) -> LinkDiagram:
+        from combolink.catalog import EMPTY_LINK
+
+        if not isinstance(other, int):
+            return NotImplemented
+
+        if other == 0:
+            return cast(LinkDiagram, EMPTY_LINK)
+
+        if other < 0:
+            self = -self
+            other = -other
+
+        diagram = self
+        for _ in range(other-1):
+            diagram = diagram + self
+        return diagram
+
+    def __rmul__(self, other: object) -> LinkDiagram:
+        return self * other
+
+    def __matmul__(self, other: object) -> LinkDiagram:
+        from combolink.transformations import connected_sum
         
         # Handle annoying type checking error
         connected_sum = cast(Callable[[LinkDiagram, LinkDiagram], LinkDiagram], connected_sum)
 
+        if not isinstance(other, LinkDiagram):
+            return NotImplemented
+
         return connected_sum(self, other)
+
+    def __pow__(self, other: object) -> LinkDiagram:
+        from combolink.catalog import UNKNOT
+
+        if not isinstance(other, int):
+            return NotImplemented
+
+        if other == 0:
+            return cast(LinkDiagram, UNKNOT)
+
+        if other < 0:
+            self = ~-self
+            other = -other
+        
+        diagram = self
+        for _ in range(other-1):
+            diagram = diagram @ self
+        return diagram
+
+    def __rtruediv__(self, other: object) -> LinkDiagram:
+        if not isinstance(other, int):
+            return NotImplemented
+
+        return other * ~-self
+
+    def __truediv__(self, other: object) -> LinkDiagram:
+        if not isinstance(other, LinkDiagram):
+            return NotImplemented
+
+        return self @ ~-other
+
+    def __len__(self) -> int:
+        return self.n_crossings
+
+    def __bool__(self) -> bool:
+        return self.n_crossings > 0
+
+    def __iter__(self) -> Iterator[Crossing]:
+        return (v for v in self.pd_code)
     
     def _shiftmod(self, edge: Edge, n: int) -> Edge:
         """Shift an edge within its oriented component cycle."""
@@ -171,6 +247,9 @@ class LinkDiagram:
             Sorted edge labels grouped by component, or ``None`` if the PD code
             is structurally invalid.
         """
+        if self.pd_code == []:
+            return ()
+
         if not self.pd_code:
             return None
 
@@ -250,6 +329,17 @@ class LinkDiagram:
             If the diagram is invalid.
         """
         return len(self.components)
+
+    @property
+    def crossings(self) -> tuple[tuple[Edge, ...], ...]:
+        """Return edge labels grouped by crossing incidence.
+
+        Returns
+        -------
+        tuple of tuple of Edge
+            Each inner tuple contains the labels incident to one crossing.
+        """
+        return tuple(self.pd_code)
 
     @property
     def n_crossings(self) -> int:

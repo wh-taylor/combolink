@@ -6,7 +6,7 @@ import random
 import time
 from combolink.diagram import LinkDiagram, Edge, Crossing, PDNotation, ReidemeisterError
 from combolink.properties import get_edges
-from combolink.catalog import INFINITY_UNKNOT, MIRROR_INFINITY_UNKNOT
+from combolink.catalog import UNKNOT
 
 
 class MoveKind(str, Enum):
@@ -171,7 +171,7 @@ def _projection_component_ids(self: LinkDiagram) -> dict[Edge, int]:
     }
 
 def _is_infinity_unknot(self: LinkDiagram) -> bool:
-    return self == INFINITY_UNKNOT or self == MIRROR_INFINITY_UNKNOT
+    return self == UNKNOT or self == ~UNKNOT
 
 
 def get_twistables(self: LinkDiagram) -> list[Edge]:

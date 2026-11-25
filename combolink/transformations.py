@@ -13,7 +13,7 @@ def reverse(self: LinkDiagram) -> LinkDiagram:
     LinkDiagram
         A diagram with the opposite orientation.
     """
-    return LinkDiagram([(d, c, b, a) for (a, b, c, d) in self.pd_code])
+    return LinkDiagram([(d, c, b, a) if d < b else (b, a, d, c) for (a, b, c, d) in self.pd_code])
 
 
 def reflect(self: LinkDiagram) -> LinkDiagram:

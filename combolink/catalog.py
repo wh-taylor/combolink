@@ -278,11 +278,7 @@ def first_n_knots(n: int) -> list[tuple[str, LinkDiagram]]:
 
 # Unknots
 
-INFINITY_UNKNOT = LinkDiagram([(1, 1, 2, 2)])
-
-MIRROR_INFINITY_UNKNOT = LinkDiagram([(2, 1, 1, 2)])
-
-DOUBLE_INFINITY_UNKNOT = LinkDiagram([(2, 4, 3, 3), (4, 2, 1, 1)])
+UNKNOT = LinkDiagram([(1, 1, 2, 2)])
 
 # https://en.m.wikipedia.org/wiki/File:Thistlethwaite_unknot.svg
 THISTLETHWAITE_UNKNOT = LinkDiagram(
@@ -400,6 +396,8 @@ CONWAY = LinkDiagram([(4, 2, 5, 1), (8, 4, 9, 3), (17, 1, 18, 22), (12, 5, 13, 6
 KINOSHITA_TERASAKA = LinkDiagram([(4, 2, 5, 1), (8, 4, 9, 3), (9, 18, 10, 19), (12, 5, 13, 6), (6, 13, 7, 14), (19, 15, 20, 14), (11, 21, 12, 20), (17, 22, 18, 1), (21, 16, 22, 17), (15, 10, 16, 11), (2, 8, 3, 7)])
 
 # Links
+
+EMPTY_LINK = LinkDiagram([])
 
 # https://en.wikipedia.org/wiki/Unlink
 UNLINK = LinkDiagram([(1, 1, 2, 2), (3, 3, 4, 4)])

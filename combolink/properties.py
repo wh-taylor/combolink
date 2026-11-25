@@ -1,6 +1,6 @@
 from itertools import product
 from combolink.diagram import LinkDiagram, Edge
-from combolink.catalog import INFINITY_UNKNOT, MIRROR_INFINITY_UNKNOT
+from combolink.catalog import UNKNOT
 from combolink.polynomial import Polynomial
 
 def _require_valid_diagram(self: LinkDiagram) -> None:
@@ -179,8 +179,8 @@ def kauffman_bracket(self: LinkDiagram) -> Polynomial:
         If ``self`` is not a valid diagram.
     """
     _require_valid_diagram(self)
-    if self == INFINITY_UNKNOT: return Polynomial({-3: -1})
-    if self == MIRROR_INFINITY_UNKNOT: return Polynomial({3: -1})
+    if self == UNKNOT: return Polynomial({-3: -1})
+    if self == ~UNKNOT: return Polynomial({3: -1})
 
     factored_poly = [(((a, d), (b, c)), ((a, b), (c, d))) for a, b, c, d in self.pd_code]
 
@@ -244,8 +244,8 @@ def get_writhe(self: LinkDiagram) -> int:
         If ``self`` is not a valid diagram.
     """
     _require_valid_diagram(self)
-    if self == INFINITY_UNKNOT: return 1
-    if self == MIRROR_INFINITY_UNKNOT: return -1
+    if self == UNKNOT: return 1
+    if self == ~UNKNOT: return -1
 
     writhe = 0
     for _, b, _, d in self.pd_code:
