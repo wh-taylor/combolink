@@ -9,6 +9,9 @@
 
 This is a pre-1.0 project; its public API may change.
 
+For installation details and worked examples, see the
+[documentation hub](docs/guide.md).
+
 ---
 
 ## Installation

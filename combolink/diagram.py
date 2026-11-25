@@ -40,7 +40,7 @@ class LinkDiagram:
         return f'LinkDiagram({repr(self.pd_code)})'
     
     def __eq__(self, other: object) -> bool | NotImplementedType:
-        """Compare diagrams up to cyclic edge-label shifts.
+        """Compare oriented link diagrams.
 
         Parameters
         ----------
@@ -100,7 +100,8 @@ class LinkDiagram:
         )
 
     def identical(self, other: LinkDiagram) -> bool:
-        """Check whether two diagrams have identical PD crossings.
+        """Compare link diagrams including edge labeling (stronger than
+        diagram equivalence).
 
         Parameters
         ----------
