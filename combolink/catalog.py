@@ -274,6 +274,16 @@ def first_n_knots(n: int) -> list[tuple[str, LinkDiagram]]:
     ]
 
 
+# Common standard link diagrams
+
+# Unknots
+
+INFINITY_UNKNOT = LinkDiagram([(1, 1, 2, 2)])
+
+MIRROR_INFINITY_UNKNOT = LinkDiagram([(2, 1, 1, 2)])
+
+DOUBLE_INFINITY_UNKNOT = LinkDiagram([(2, 4, 3, 3), (4, 2, 1, 1)])
+
 # https://en.m.wikipedia.org/wiki/File:Thistlethwaite_unknot.svg
 THISTLETHWAITE_UNKNOT = LinkDiagram(
     [
@@ -313,3 +323,105 @@ OCHIAI_UNKNOT = LinkDiagram(
         (25, 19, 26, 18),
     ]
 )
+
+# https://homepages.math.uic.edu/~kauffman/IntellUnKnot.pdf
+CULPRIT_UNKNOT = LinkDiagram(
+    [
+        (2, 13, 3, 14),
+        (4, 11, 5, 12),
+        (8, 20, 9, 19),
+        (10, 3, 11, 4),
+        (12, 5, 13, 6),
+        (14, 1, 15, 2),
+        (15, 7, 16, 6),
+        (16, 9, 17, 10),
+        (18, 8, 19, 7),
+        (20, 18, 1, 17),
+    ]
+)
+
+# Non-trivial knots
+
+# 3_1 (left-handed), the classic non-trivial knot!
+# The (2, 3) torus knot (https://en.wikipedia.org/wiki/Torus_knot)
+# The one-twist knot (https://en.wikipedia.org/wiki/Twist_knot)
+# https://en.wikipedia.org/wiki/Trefoil_knot
+TREFOIL = LinkDiagram([(2, 5, 3, 6), (4, 1, 5, 2), (6, 3, 1, 4)])
+
+# 4_1
+# The two-twist knot
+# https://en.wikipedia.org/wiki/Figure-eight_knot_(mathematics)
+FIGURE_EIGHT = LinkDiagram([(1, 6, 2, 7), (3, 1, 4, 8), (5, 2, 6, 3), (7, 5, 8, 4)])
+
+# 5_1
+# The (2, 5) torus knot
+# https://en.wikipedia.org/wiki/Cinquefoil_knot
+CINQUEFOIL = LinkDiagram([(2, 8, 3, 7), (4, 10, 5, 9), (6, 2, 7, 1), (8, 4, 9, 3), (10, 6, 1, 5)])
+
+# 5_2
+# The three-twist knot
+# https://en.wikipedia.org/wiki/Three-twist_knot
+THREE_TWIST = LinkDiagram([(1, 5, 2, 4), (3, 9, 4, 8), (5, 1, 6, 10), (7, 3, 8, 2), (9, 7, 10, 6)])
+
+# 6_1
+# The four-twist knot
+# https://en.wikipedia.org/wiki/Stevedore_knot_(mathematics)
+STEVEDORE = LinkDiagram([(1, 7, 2, 6), (3, 10, 4, 11), (5, 3, 6, 2), (7, 1, 8, 12), (9, 4, 10, 5), (11, 9, 12, 8)])
+
+# 6_2
+# https://en.wikipedia.org/wiki/62_knot
+MILLER_INSTITUTE = LinkDiagram([(1, 8, 2, 9), (3, 11, 4, 10), (5, 1, 6, 12), (7, 2, 8, 3), (9, 7, 10, 6), (11, 5, 12, 4)])
+
+# 7_1
+# The (2, 7) torus knot
+# https://en.wikipedia.org/wiki/71_knot
+SEPTAFOIL = LinkDiagram([(1, 9, 2, 8), (3, 11, 4, 10), (5, 13, 6, 12), (7, 1, 8, 14), (9, 3, 10, 2), (11, 5, 12, 4), (13, 7, 14, 6)])
+
+# 7_2
+# The five-twist knot
+# https://en.wikipedia.org/wiki/7_2_knot
+PENTATWIST = LinkDiagram([(2, 10, 3, 9), (4, 14, 5, 13), (6, 12, 7, 11), (8, 2, 9, 1), (10, 8, 11, 7), (12, 6, 13, 5), (14, 4, 1, 3)])
+
+# 7_4
+# https://en.wikipedia.org/wiki/74_knot
+# https://en.wikipedia.org/wiki/Endless_knot
+ENDLESS = LinkDiagram([(2, 10, 3, 9), (4, 12, 5, 11), (6, 14, 7, 13), (8, 4, 9, 3), (10, 2, 11, 1), (12, 8, 13, 7), (14, 6, 1, 5)])
+
+# 10_161
+# https://en.wikipedia.org/wiki/Perko_pair
+PERKO_PAIR = LinkDiagram([(1, 13, 2, 12), (4, 18, 5, 17), (6, 14, 7, 13), (8, 4, 9, 3), (9, 17, 10, 16), (11, 1, 12, 20), (14, 6, 15, 5), (15, 11, 16, 10), (18, 8, 19, 7), (19, 3, 20, 2)])
+
+# 11n_34
+# https://en.wikipedia.org/wiki/Conway_knot
+CONWAY = LinkDiagram([(4, 2, 5, 1), (8, 4, 9, 3), (17, 1, 18, 22), (12, 5, 13, 6), (6, 13, 7, 14), (11, 18, 12, 19), (19, 14, 20, 15), (9, 17, 10, 16), (15, 20, 16, 21), (21, 10, 22, 11), (2, 8, 3, 7)])
+
+# 11n_42 (has the same Jones polynomial as the Conway knot 11n_34)
+# https://en.wikipedia.org/wiki/Kinoshita%E2%80%93Terasaka_knot
+KINOSHITA_TERASAKA = LinkDiagram([(4, 2, 5, 1), (8, 4, 9, 3), (9, 18, 10, 19), (12, 5, 13, 6), (6, 13, 7, 14), (19, 15, 20, 14), (11, 21, 12, 20), (17, 22, 18, 1), (21, 16, 22, 17), (15, 10, 16, 11), (2, 8, 3, 7)])
+
+# Links
+
+# https://en.wikipedia.org/wiki/Unlink
+UNLINK = LinkDiagram([(1, 1, 2, 2), (3, 3, 4, 4)])
+
+# https://en.wikipedia.org/wiki/Hopf_link
+HOPF_LINK = LinkDiagram([(1, 3, 2, 4), (4, 2, 3, 1)])
+
+# https://en.wikipedia.org/wiki/Borromean_rings
+BORROMEAN_RINGS = LinkDiagram(
+    [
+        (6, 1, 7, 2),
+        (12, 8, 9, 7),
+        (4, 12, 1, 11),
+        (10, 5, 11, 6),
+        (8, 4, 5, 3),
+        (2, 9, 3, 10),
+    ]
+)
+
+# Not an actual knot!
+# https://en.wikipedia.org/wiki/Solomon's_knot
+SOLOMONS_KNOT = LinkDiagram([(2, 8, 3, 7), (4, 6, 1, 5), (6, 2, 7, 1), (8, 4, 5, 3)])
+
+# https://en.wikipedia.org/wiki/Whitehead_link
+WHITEHEAD_LINK = LinkDiagram([(2, 6, 3, 5), (4, 8, 5, 9), (6, 7, 1, 10), (7, 2, 8, 1), (9, 3, 10, 4)])
