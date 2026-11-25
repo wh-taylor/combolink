@@ -197,7 +197,7 @@ def _strand_successors(
     diagram: LinkDiagram,
 ) -> tuple[tuple[tuple[Edge, ...], ...], dict[Edge, Edge]]:
     """Get oriented component cycles and the successor map S."""
-    link_components = tuple(tuple(component) for component in diagram.components)
+    link_components = tuple(tuple(component) for component in diagram.components_edges)
     successors = {
         edge: component[(index + 1) % len(component)]
         for component in link_components
@@ -373,7 +373,7 @@ def to_graph(diagram: LinkDiagram) -> CombinatorialLinkDiagram:
     if not diagram.is_valid():
         raise ValueError("cannot compile an invalid link diagram.")
 
-    pd_code = diagram.pd_code
+    pd_code = list(diagram.crossings)
     edge_occurrences = _edge_occurrences(pd_code)
     edge_labels = tuple(sorted(edge_occurrences))
     link_components, successors = _strand_successors(diagram)

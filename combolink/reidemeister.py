@@ -145,20 +145,20 @@ def _is_slidable(self: LinkDiagram, edge1: Edge, edge2: Edge, edge3: Edge) -> bo
 def _projection_component_ids(self: LinkDiagram) -> dict[Edge, int]:
     """Map each edge to its connected component in the crossing projection."""
     crossing_indices_by_edge: dict[Edge, set[int]] = {}
-    for crossing_index, crossing in enumerate(self.pd_code):
+    for crossing_index, crossing in enumerate(self.crossings):
         for edge in crossing:
             crossing_indices_by_edge.setdefault(edge, set()).add(crossing_index)
 
     crossing_component_ids: dict[int, int] = {}
     component_id = 0
-    for start in range(len(self.pd_code)):
+    for start in range(len(self.crossings)):
         if start in crossing_component_ids:
             continue
         crossing_component_ids[start] = component_id
         stack = [start]
         while stack:
             crossing_index = stack.pop()
-            for edge in self.pd_code[crossing_index]:
+            for edge in self.crossings[crossing_index]:
                 for adjacent in crossing_indices_by_edge[edge]:
                     if adjacent not in crossing_component_ids:
                         crossing_component_ids[adjacent] = component_id
@@ -207,7 +207,7 @@ def get_untwistables(self: LinkDiagram) -> list[Edge]:
         return []
 
     untwistables = []
-    for crossing in self.pd_code:
+    for crossing in self.crossings:
         if len(set(crossing)) == 3:
             untwistables.append(max(set(crossing), key=crossing.count))
         elif len(set(crossing)) == 2 and all(
@@ -277,14 +277,14 @@ def get_unpokables(self: LinkDiagram) -> list[tuple[Edge, Edge]]:
         if len(face_ccw) == 2 and _is_unpokable(self, *[abs(n) for n in face_ccw]):
             candidate = tuple(sorted(abs(n) for n in face_ccw))
             if (
-                sum(all(part in crossing for part in candidate) for crossing in self.pd_code) == 2
+                sum(all(part in crossing for part in candidate) for crossing in self.crossings) == 2
                 and candidate not in unpokables
             ):
                 unpokables.append(candidate)
         if len(face_cw) == 2 and _is_unpokable(self, *[abs(n) for n in face_cw]):
             candidate = tuple(sorted(abs(n) for n in face_cw))
             if (
-                sum(all(part in crossing for part in candidate) for crossing in self.pd_code) == 2
+                sum(all(part in crossing for part in candidate) for crossing in self.crossings) == 2
                 and candidate not in unpokables
             ):
                 unpokables.append(candidate)
@@ -319,34 +319,34 @@ def _has_oriented_edge_cycles(self: LinkDiagram) -> bool:
     if not self.is_valid():
         return False
     try:
-        for edge in range(1, 2 * len(self.pd_code) + 1):
+        for edge in range(1, 2 * len(self.crossings) + 1):
             self._get_forth_index(edge)
     except NotImplementedError:
         return False
     return True
 
 
-def _preserve_component_count(pd_code: PDNotation, component_count: int) -> LinkDiagram:
+def _preserve_component_count(crossings: PDNotation, component_count: int) -> LinkDiagram:
     """Restore missing components with single-crossing unknot diagrams."""
     current_count = 0
-    if pd_code:
-        candidate = LinkDiagram(pd_code)
+    if crossings:
+        candidate = LinkDiagram(crossings)
         if not candidate.is_valid():
             raise ReidemeisterError("move produced an invalid PD code.")
         current_count = candidate.n_components
     if current_count > component_count:
         raise ReidemeisterError("move changed the number of link components.")
     while current_count < component_count:
-        first_edge = 2 * len(pd_code) + 1
-        pd_code.append(
+        first_edge = 2 * len(crossings) + 1
+        crossings.append(
             (first_edge, first_edge + 1, first_edge + 1, first_edge)
         )
         current_count += 1
-    return LinkDiagram(pd_code)
+    return LinkDiagram(crossings)
 
 
 def _relabel_after_contractions(
-    pd_code: PDNotation,
+    crossings: PDNotation,
     components: tuple[tuple[Edge, ...], ...],
     merged_edges: dict[Edge, Edge],
     removed_edges: set[Edge],
@@ -391,7 +391,7 @@ def _relabel_after_contractions(
                 old_to_new[c],
                 old_to_new[d],
             )
-            for a, b, c, d in pd_code
+            for a, b, c, d in crossings
         ]
     except KeyError as error:
         raise ReidemeisterError("removed crossing left an unmatched PD edge.") from error
@@ -403,10 +403,10 @@ def _prepare_twist(
     retained_occurrence: tuple[int, int],
 ) -> PDNotation:
     """Readjust the edge values of `diagram` with the expectation of a twist at `target_edge`."""
-    pd_code: PDNotation = []
+    crossings: PDNotation = []
     target_occurrences = [
         (crossing_index, edge_index)
-        for crossing_index, crossing in enumerate(self.pd_code)
+        for crossing_index, crossing in enumerate(self.crossings)
         for edge_index, edge in enumerate(crossing)
         if edge == target_edge
     ]
@@ -414,7 +414,7 @@ def _prepare_twist(
         raise ReidemeisterError("given edge does not occur twice in the diagram.")
 
     # Map over each edge in each crossing of `diagram`.
-    for crossing_index, crossing in enumerate(self.pd_code):
+    for crossing_index, crossing in enumerate(self.crossings):
         new_crossing_as_list: list[Edge] = []
         for edge_index, edge in enumerate(crossing):
             if edge > target_edge:
@@ -429,23 +429,23 @@ def _prepare_twist(
             new_crossing_as_list[2],
             new_crossing_as_list[3],
         )
-        pd_code.append(new_crossing)
+        crossings.append(new_crossing)
     
-    return pd_code
+    return crossings
 
 
 def _twist(self: LinkDiagram, edge: Edge, crossing: Crossing) -> LinkDiagram:
     """Apply a specified crossing pattern as a Reidemeister I move."""
     occurrences = [
         (crossing_index, edge_index)
-        for crossing_index, row in enumerate(self.pd_code)
+        for crossing_index, row in enumerate(self.crossings)
         for edge_index, crossing_edge in enumerate(row)
         if crossing_edge == edge
     ]
     fallback = None
     for retained_occurrence in occurrences:
-        pd_code = _prepare_twist(self, edge, retained_occurrence)
-        candidate = LinkDiagram(pd_code + [crossing])
+        crossings = _prepare_twist(self, edge, retained_occurrence)
+        candidate = LinkDiagram(crossings + [crossing])
         if fallback is None and candidate.is_valid():
             fallback = candidate
         if _has_oriented_edge_cycles(candidate):
@@ -479,7 +479,7 @@ def left_positive_twist(self: LinkDiagram, edge: Edge) -> LinkDiagram:
             return LinkDiagram([(1, 2, 2, 3), (3, 1, 4, 4)])
         if edge == 2:
             return LinkDiagram([(1, 4, 2, 1), (3, 2, 4, 3)])
-    if edge == 1 or edge == 2*len(self.pd_code):
+    if edge == 1 or edge == 2*len(self.crossings):
         return left_positive_twist(self.shift(1), self._next(edge))
     return _twist(self, edge, (edge, edge + 2, edge + 1, edge + 1))
 
@@ -508,7 +508,7 @@ def left_negative_twist(self: LinkDiagram, edge: Edge) -> LinkDiagram:
             return LinkDiagram([(1, 2, 2, 3), (4, 3, 1, 4)])
         if edge == 2:
             return LinkDiagram([(1, 4, 2, 1), (2, 4, 3, 3)])
-    if edge == 1 or edge == 2*len(self.pd_code):
+    if edge == 1 or edge == 2*len(self.crossings):
         return left_negative_twist(self.shift(1), self._next(edge))
     return _twist(self, edge, (edge + 1, edge, edge + 2, edge + 1))
 
@@ -537,7 +537,7 @@ def right_positive_twist(self: LinkDiagram, edge: Edge) -> LinkDiagram:
             return LinkDiagram([(1, 2, 2, 3), (3, 4, 4, 1)])
         if edge == 2:
             return LinkDiagram([(1, 4, 2, 1), (3, 3, 4, 2)])
-    if edge == 1 or edge == 2*len(self.pd_code):
+    if edge == 1 or edge == 2*len(self.crossings):
         return right_positive_twist(self.shift(1), self._next(edge))
     return _twist(self, edge, (edge + 1, edge + 1, edge + 2, edge))
 
@@ -566,7 +566,7 @@ def right_negative_twist(self: LinkDiagram, edge: Edge) -> LinkDiagram:
             return LinkDiagram([(1, 2, 2, 3), (4, 4, 1, 3)])
         if edge == 2:
             return LinkDiagram([(1, 4, 2, 1), (2, 3, 3, 4)])
-    if edge == 1 or edge == 2*len(self.pd_code):
+    if edge == 1 or edge == 2*len(self.crossings):
         return right_negative_twist(self.shift(1), self._next(edge))
     return _twist(self, edge, (edge, edge + 1, edge + 1, edge + 2))
 
@@ -591,12 +591,12 @@ def untwist(self: LinkDiagram, edge: Edge) -> LinkDiagram:
         If the edge is not on a valid twist or its edges cannot be reconnected.
     """
     crossing_index = next(
-        (index for index, crossing in enumerate(self.pd_code) if crossing.count(edge) == 2),
+        (index for index, crossing in enumerate(self.crossings) if crossing.count(edge) == 2),
         None,
     )
     if crossing_index is None:
         raise ReidemeisterError("given edge is not on a twist, so it cannot be untwisted.")
-    crossing = self.pd_code[crossing_index]
+    crossing = self.crossings[crossing_index]
     other_edges = [crossing_edge for crossing_edge in crossing if crossing_edge != edge]
     if len(other_edges) != 2:
         raise ReidemeisterError("given crossing is not a valid twist.")
@@ -607,22 +607,22 @@ def untwist(self: LinkDiagram, edge: Edge) -> LinkDiagram:
     else:
         if not any(
             other_edges[0] in component and other_edges[1] in component
-            for component in self.components
+            for component in self.components_edges
         ):
             raise ReidemeisterError("twist edges belong to different components.")
         merged_edges[max(other_edges)] = min(other_edges)
 
-    pd_code = [
-        row for index, row in enumerate(self.pd_code)
+    crossings = [
+        row for index, row in enumerate(self.crossings)
         if index != crossing_index
     ]
-    pd_code = _relabel_after_contractions(
-        pd_code,
-        self.components,
+    crossings = _relabel_after_contractions(
+        crossings,
+        self.components_edges,
         merged_edges,
         removed_edges,
     )
-    return _preserve_component_count(pd_code, self.n_components)
+    return _preserve_component_count(crossings, self.n_components)
 
 def _prepare_poke(
     self: LinkDiagram,
@@ -631,10 +631,10 @@ def _prepare_poke(
     retained_occurrences: dict[Edge, tuple[int, int]],
 ) -> PDNotation:
     """Readjust edge labels before a poke using the selected retained endpoints."""
-    pd_code: PDNotation = []
+    crossings: PDNotation = []
 
     # Map over each edge in each crossing of `diagram`.
-    for crossing_index, crossing in enumerate(self.pd_code):
+    for crossing_index, crossing in enumerate(self.crossings):
         new_crossing_as_list: list[Edge] = []
         for edge_index, edge in enumerate(crossing):
             # Keep the selected endpoint on each original edge and split its other endpoint.
@@ -661,13 +661,13 @@ def _prepare_poke(
             new_crossing_as_list[2],
             new_crossing_as_list[3],
         )
-        pd_code.append(new_crossing)
+        crossings.append(new_crossing)
 
-    return pd_code
+    return crossings
 
 
 def _append_poke_crossings(
-    pd_code: PDNotation,
+    crossings: PDNotation,
     lower_edge: Edge,
     higher_edge: Edge,
     under_edge: Edge,
@@ -676,45 +676,45 @@ def _append_poke_crossings(
     """Append the two crossings for a selected R2 face orientation."""
     if face_orientation == "negative_cw":
         if under_edge == lower_edge:
-            pd_code.extend([
+            crossings.extend([
                 (lower_edge, higher_edge + 2, lower_edge + 1, higher_edge + 3),
                 (lower_edge + 1, higher_edge + 4, lower_edge + 2, higher_edge + 3),
             ])
         else:
-            pd_code.extend([
+            crossings.extend([
                 (higher_edge + 2, lower_edge + 1, higher_edge + 3, lower_edge),
                 (higher_edge + 3, lower_edge + 1, higher_edge + 4, lower_edge + 2),
             ])
     elif face_orientation == "negative_ccw":
         if under_edge == lower_edge:
-            pd_code.extend([
+            crossings.extend([
                 (lower_edge, higher_edge + 3, lower_edge + 1, higher_edge + 2),
                 (lower_edge + 1, higher_edge + 3, lower_edge + 2, higher_edge + 4),
             ])
         else:
-            pd_code.extend([
+            crossings.extend([
                 (higher_edge + 2, lower_edge, higher_edge + 3, lower_edge + 1),
                 (higher_edge + 3, lower_edge + 2, higher_edge + 4, lower_edge + 1),
             ])
     elif face_orientation == "positive_cw":
         if under_edge == lower_edge:
-            pd_code.extend([
+            crossings.extend([
                 (lower_edge, higher_edge + 4, lower_edge + 1, higher_edge + 3),
                 (lower_edge + 1, higher_edge + 2, lower_edge + 2, higher_edge + 3),
             ])
         else:
-            pd_code.extend([
+            crossings.extend([
                 (higher_edge + 2, lower_edge + 1, higher_edge + 3, lower_edge + 2),
                 (higher_edge + 3, lower_edge + 1, higher_edge + 4, lower_edge),
             ])
     elif face_orientation == "positive_ccw":
         if under_edge == lower_edge:
-            pd_code.extend([
+            crossings.extend([
                 (lower_edge, higher_edge + 3, lower_edge + 1, higher_edge + 4),
                 (lower_edge + 1, higher_edge + 3, lower_edge + 2, higher_edge + 2),
             ])
         else:
-            pd_code.extend([
+            crossings.extend([
                 (higher_edge + 2, lower_edge + 2, higher_edge + 3, lower_edge + 1),
                 (higher_edge + 3, lower_edge, higher_edge + 4, lower_edge + 1),
             ])
@@ -786,7 +786,7 @@ def poke(self: LinkDiagram, under_edge: Edge, over_edge: Edge) -> LinkDiagram:
     occurrences = {
         edge: [
             (crossing_index, edge_index)
-            for crossing_index, crossing in enumerate(self.pd_code)
+            for crossing_index, crossing in enumerate(self.crossings)
             for edge_index, crossing_edge in enumerate(crossing)
             if crossing_edge == edge
         ]
@@ -798,7 +798,7 @@ def poke(self: LinkDiagram, under_edge: Edge, over_edge: Edge) -> LinkDiagram:
     for face_orientation in face_orientations:
         for lower_occurrence in occurrences[lower_edge]:
             for higher_occurrence in occurrences[higher_edge]:
-                pd_code = _prepare_poke(
+                crossings = _prepare_poke(
                     self,
                     lower_edge,
                     higher_edge,
@@ -808,13 +808,13 @@ def poke(self: LinkDiagram, under_edge: Edge, over_edge: Edge) -> LinkDiagram:
                     },
                 )
                 _append_poke_crossings(
-                    pd_code,
+                    crossings,
                     lower_edge,
                     higher_edge,
                     under_edge,
                     face_orientation,
                 )
-                candidate = LinkDiagram(pd_code)
+                candidate = LinkDiagram(crossings)
                 if _has_oriented_edge_cycles(candidate):
                     return candidate
 
@@ -843,30 +843,30 @@ def unpoke(self: LinkDiagram, edge1: Edge, edge2: Edge) -> LinkDiagram:
     """
     removed_crossings = [
         crossing
-        for crossing in self.pd_code
+        for crossing in self.crossings
         if edge1 in crossing and edge2 in crossing
     ]
     if len(removed_crossings) != 2:
         raise ReidemeisterError("given edge is not on a poke, so it cannot be unpoked.")
     removed_indices = {
         index
-        for index, crossing in enumerate(self.pd_code)
+        for index, crossing in enumerate(self.crossings)
         if edge1 in crossing and edge2 in crossing
     }
-    pd_code = [
+    crossings = [
         crossing
-        for index, crossing in enumerate(self.pd_code)
+        for index, crossing in enumerate(self.crossings)
         if index not in removed_indices
     ]
 
     edge_counts: dict[Edge, int] = {
-        edge: sum(crossing.count(edge) for crossing in pd_code)
-        for component in self.components
+        edge: sum(crossing.count(edge) for crossing in crossings)
+        for component in self.components_edges
         for edge in component
     }
     merged_edges: dict[Edge, Edge] = {}
     removed_edges: set[Edge] = set()
-    for component in self.components:
+    for component in self.components_edges:
         zero_indices = [
             index for index, edge in enumerate(component)
             if edge_counts[edge] == 0
@@ -900,13 +900,13 @@ def unpoke(self: LinkDiagram, edge1: Edge, edge2: Edge) -> LinkDiagram:
             merged_edges[next_edge] = previous_edge
             removed_edges.update(run)
 
-    pd_code = _relabel_after_contractions(
-        pd_code,
-        self.components,
+    crossings = _relabel_after_contractions(
+        crossings,
+        self.components_edges,
         merged_edges,
         removed_edges,
     )
-    return _preserve_component_count(pd_code, self.n_components)
+    return _preserve_component_count(crossings, self.n_components)
 
 def slide(self: LinkDiagram, edge1: Edge, edge2: Edge, edge3: Edge) -> LinkDiagram:
     """Apply a Reidemeister III move across a triangular face.
@@ -942,28 +942,28 @@ def slide(self: LinkDiagram, edge1: Edge, edge2: Edge, edge3: Edge) -> LinkDiagr
         raise ReidemeisterError("given edges do not follow the correct pattern for a slide.")
 
     # Initialize three crossings to be updated while iterating over the relevant crossings.
-    pd_code = [[0, 0, 0, 0] for _ in range(len(self.pd_code))]
+    crossings = [[0, 0, 0, 0] for _ in range(len(self.crossings))]
 
     # Map over each edge in each relevant crossing by index.
     # The crossing index is the index of a crossing in the PD notation as a list.
-    for crossing_index in range(len(self.pd_code)):
+    for crossing_index in range(len(self.crossings)):
         # The edge index is the index of an edge in a crossing.
         for edge_index in range(4):
             # Shift the relevant crossings down two. However, if the edge is one of the three edges forming the face of the slide, use the edge shifted down two from its friend instead.
             # See `_get_friend_index` for the definition of a friend.
-            if any(edge in self.pd_code[crossing_index] for edge in edges) and self.pd_code[crossing_index][edge_index] in [edge1, edge2, edge3]:
+            if any(edge in self.crossings[crossing_index] for edge in edges) and self.crossings[crossing_index][edge_index] in [edge1, edge2, edge3]:
                 friend_crossing_index, friend_edge_index = self._get_friend_index(crossing_index, edge_index)
-                pd_code[crossing_index][edge_index] = (
-                    self.pd_code[friend_crossing_index][(friend_edge_index + 2) % 4]
+                crossings[crossing_index][edge_index] = (
+                    self.crossings[friend_crossing_index][(friend_edge_index + 2) % 4]
                 )
-            elif any(edge in self.pd_code[crossing_index] for edge in edges):
-                pd_code[crossing_index][edge_index] = self.pd_code[crossing_index][(edge_index + 2) % 4]
+            elif any(edge in self.crossings[crossing_index] for edge in edges):
+                crossings[crossing_index][edge_index] = self.crossings[crossing_index][(edge_index + 2) % 4]
             else:
-                pd_code[crossing_index][edge_index] = self.pd_code[crossing_index][edge_index]
+                crossings[crossing_index][edge_index] = self.crossings[crossing_index][edge_index]
     
-    pd_code = [tuple(crossing) for crossing in pd_code]
+    crossings = [tuple(crossing) for crossing in crossings]
 
-    return LinkDiagram(pd_code)
+    return LinkDiagram(crossings)
 
 
 def get_moves(self: LinkDiagram) -> list[Move]:
@@ -1033,7 +1033,7 @@ def apply_move(self: LinkDiagram, move: Move) -> LinkDiagram:
         raise TypeError("move must be a Move.")
     if not self.is_valid():
         raise ValueError("cannot apply a move to an invalid diagram.")
-    if any(edge > 2 * len(self.pd_code) for edge in move.edges):
+    if any(edge > 2 * len(self.crossings) for edge in move.edges):
         raise ValueError("move edges must belong to the diagram.")
 
     match move.kind:
@@ -1177,7 +1177,7 @@ def randomeister(self: LinkDiagram, moves: int, beta: float, show: bool = False)
     for _ in range(moves):
         diagram = apply_random_move(diagram, beta)
         diagrams.append(diagram)
-        if show: print(len(diagram.pd_code))
+        if show: print(len(diagram.crossings))
     return diagrams
 
 def unknot_solver(self: LinkDiagram, beta: float):
@@ -1201,9 +1201,9 @@ def unknot_solver(self: LinkDiagram, beta: float):
     diagram = self
     i = 0
     t0 = time.time()
-    while len(diagram.pd_code) > 2:
+    while len(diagram.crossings) > 2:
         diagram = apply_random_move(diagram, beta)
-        # print(len(diagram.pd_code), end=', ')
+        # print(len(diagram.crossings), end=', ')
         assert diagram.is_valid()
         i += 1
 

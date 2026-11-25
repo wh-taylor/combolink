@@ -2,6 +2,8 @@ from __future__ import annotations
 from types import NotImplementedType
 from typing import Concatenate, cast
 from collections.abc import Callable, Iterator
+from collections import defaultdict
+from itertools import permutations, product
 
 Edge = int
 SignedEdge = int
@@ -28,7 +30,7 @@ class LinkDiagram:
         pd_code : PDNotation
             Crossing tuples describing the diagram.
         """
-        self.pd_code: PDNotation = pd_code
+        self._pd_code: PDNotation = pd_code
     
     def __repr__(self) -> str:
         """Return a constructor-like representation of the diagram.
@@ -38,33 +40,7 @@ class LinkDiagram:
         str
             The diagram represented as ``LinkDiagram(pd_code)``.
         """
-        return f'LinkDiagram({repr(self.pd_code)})'
-    
-    def __eq__(self, other: object) -> bool | NotImplementedType:
-        """Compare oriented link diagrams.
-
-        Parameters
-        ----------
-        other : object
-            Value to compare with this diagram.
-
-        Returns
-        -------
-        bool or NotImplementedType
-            Whether the valid diagrams have the same oriented PD crossings,
-            allowing cyclic shifts of edge labels. Returns ``NotImplemented``
-            for values that are not diagrams.
-        """
-        if not isinstance(other, LinkDiagram):
-            return NotImplemented
-        if not self.is_valid() or not other.is_valid():
-            return False
-        if self.pd_code == other.pd_code:
-            return True
-        for n in range(2*len(self.pd_code)):
-            if self.shift(n).identical(other):
-                return True
-        return False
+        return f'LinkDiagram({repr(self._pd_code)})'
 
     def pipe[**P, R](self, f: Callable[Concatenate[LinkDiagram, P], R], *args: P.args, **kwargs: P.kwargs) -> R:
         """Apply a function to the diagram.
@@ -115,6 +91,25 @@ class LinkDiagram:
 
     # Dunder methods
 
+    def __eq__(self, other: object) -> bool:
+        """Compare oriented link diagrams.
+
+        Parameters
+        ----------
+        other : object
+            Value to compare with this diagram.
+
+        Returns
+        -------
+        bool or NotImplementedType
+            Whether the valid diagrams have the same oriented PD crossings,
+            allowing cyclic shifts of edge labels. Returns ``NotImplemented``
+            for values that are not diagrams.
+        """
+        if not isinstance(other, LinkDiagram):
+            return NotImplemented
+        return self.normalize().crossings == other.normalize().crossings
+
     def __invert__(self) -> LinkDiagram:
         return self._reflect()
 
@@ -155,20 +150,15 @@ class LinkDiagram:
             other = -other
         
         diagram = self
-        for _ in range(other-1):
-            diagram = diagram @ self
+        for _ in range(other-1): diagram = diagram @ self
         return diagram
 
     def __rtruediv__(self, other: object) -> LinkDiagram:
-        if not isinstance(other, int):
-            return NotImplemented
-
+        if not isinstance(other, int): return NotImplemented
         return other * ~-self
 
     def __truediv__(self, other: object) -> LinkDiagram:
-        if not isinstance(other, LinkDiagram):
-            return NotImplemented
-
+        if not isinstance(other, LinkDiagram): return NotImplemented
         return self @ ~-other
 
     def __len__(self) -> int:
@@ -177,14 +167,78 @@ class LinkDiagram:
     def __bool__(self) -> bool:
         return self.n_crossings > 0
 
-    def __iter__(self) -> Iterator[Crossing]:
-        return (v for v in self.pd_code)
+    def __iter__(self) -> Iterator[LinkDiagram]:
+        return (component for component in self.components)
+
+    def __getitem__(self, key: int | slice) -> LinkDiagram | tuple[LinkDiagram, ...]:
+        return self.components[key]
 
     def __contains__(self, other: LinkDiagram) -> bool:
         return any(other == component for component in self.components)
 
     def __hash__(self) -> int:
-        return hash(self.crossings)
+        return hash(self.normalize().crossings)
+
+    def __pos__(self) -> LinkDiagram:
+        return self.normalize()
+
+    def normalize(self) -> LinkDiagram:
+        """Return a canonical tuple of crossings for knots and multi-component links.
+
+        Invariant under crossing order, component order, and independent
+        cyclic edge shifts within each oriented component.
+        """
+        comp_edges = self._calculate_components()
+        if comp_edges is None:
+            raise ValueError('cannot normalize an invalid link diagram.')
+        if not self._pd_code:
+            return LinkDiagram([])
+
+        by_size: dict[int, list[int]] = defaultdict(list)
+        for idx, comp in enumerate(comp_edges):
+            by_size[len(comp)].append(idx)
+
+        size_groups = [by_size[size] for size in sorted(by_size)]
+        comp_orderings = [
+            tuple(idx for group in perm_tuple for idx in group)
+            for perm_tuple in product(*(permutations(g) for g in size_groups))
+        ]
+
+        best: tuple[Crossing, ...] | None = None
+
+        for order in comp_orderings:
+            reorder_map: dict[Edge, Edge] = {}
+            curr = 1
+            for comp_idx in order:
+                for edge in comp_edges[comp_idx]:
+                    reorder_map[edge] = curr
+                    curr += 1
+
+            reordered = LinkDiagram([
+                (
+                    reorder_map[c[0]],
+                    reorder_map[c[1]],
+                    reorder_map[c[2]],
+                    reorder_map[c[3]],
+                )
+                for c in self._pd_code
+            ])
+
+            shift_ranges = [range(len(comp_edges[i])) for i in order]
+            for shift_tuple in product(*shift_ranges):
+                shifted = reordered.shift(*shift_tuple)
+                candidate = tuple(((e1, e2, e3, e4) for e1, e2, e3, e4 in sorted(shifted.crossings)))
+                if best is None or candidate < best:
+                    best = candidate
+
+        if best is None:
+            raise NotImplementedError
+
+        diagram = LinkDiagram(list(best))
+        if not diagram.is_valid():
+            raise ValueError('cannot normalize an invalid link diagram.')
+        
+        return diagram
     
     def _shiftmod(self, edge: Edge, n: int) -> Edge:
         """Shift an edge within its oriented component cycle."""
@@ -194,14 +248,15 @@ class LinkDiagram:
                 return component[(index + n) % len(component)]
         raise ValueError(f"edge {edge} does not belong to this diagram.")
 
-    def shift(self, n: int) -> LinkDiagram:
+    def shift(self, *shifts: int) -> LinkDiagram:
         """Cyclically shift edge labels within their oriented components.
 
         Parameters
         ----------
-        n : int
-            Number of positions by which to shift each component's edge labels.
-            Negative values shift in the opposite direction.
+        *shifts : int
+            If a single integer is provided, all components are shifted by that
+            amount. Otherwise, one integer per component must be provided to
+            shift each component independently.
 
         Returns
         -------
@@ -211,14 +266,38 @@ class LinkDiagram:
         Raises
         ------
         ValueError
-            If this diagram is invalid.
+            If this diagram is invalid or the number of shifts does not match
+            the number of components.
         """
-        return LinkDiagram(
-            [
-                tuple(self._shiftmod(edge, n) for edge in crossing)
-                for crossing in self.pd_code
-            ]
-        )
+        comp_edges = self.components_edges  # Raises ValueError if invalid
+        if not comp_edges:
+            return LinkDiagram([])
+
+        if len(shifts) == 1:
+            per_comp_shifts = (shifts[0],) * len(comp_edges)
+        elif len(shifts) == len(comp_edges):
+            per_comp_shifts = shifts
+        else:
+            raise ValueError(
+                f"Expected 1 shift or {len(comp_edges)} per-component shifts, "
+                f"got {len(shifts)}."
+            )
+
+        mapping: dict[Edge, Edge] = {}
+        for comp, n in zip(comp_edges, per_comp_shifts):
+            m = len(comp)
+            for i, edge in enumerate(comp):
+                mapping[edge] = comp[(i + n) % m]
+
+        return LinkDiagram([
+            (
+                mapping[crossing[0]],
+                mapping[crossing[1]],
+                mapping[crossing[2]],
+                mapping[crossing[3]],
+            )
+            for crossing in self._pd_code
+        ])
 
     def identical(self, other: LinkDiagram) -> bool:
         """Compare link diagrams including edge labeling (stronger than
@@ -236,9 +315,9 @@ class LinkDiagram:
             of crossing-list order and with edge labels unchanged.
         """
         if not self.is_valid() or not other.is_valid(): return False
-        if len(self.pd_code) != len(other.pd_code): return False
-        return {tuple(crossing) for crossing in self.pd_code} == {
-            tuple(crossing) for crossing in other.pd_code
+        if len(self._pd_code) != len(other._pd_code): return False
+        return {tuple(crossing) for crossing in self._pd_code} == {
+            tuple(crossing) for crossing in other._pd_code
         }
 
     def _calculate_components(self) -> tuple[tuple[Edge, ...], ...] | None:
@@ -250,17 +329,17 @@ class LinkDiagram:
             Sorted edge labels grouped by component, or ``None`` if the PD code
             is structurally invalid.
         """
-        if self.pd_code == []:
+        if self._pd_code == []:
             return ()
 
-        if not self.pd_code:
+        if not self._pd_code:
             return None
 
-        edge_count = 2 * len(self.pd_code)
+        edge_count = 2 * len(self._pd_code)
         edge_counts = [0] * edge_count
         adjacent_edges = [set() for _ in range(edge_count)]
 
-        for crossing in self.pd_code:
+        for crossing in self._pd_code:
             if not isinstance(crossing, (tuple, list)) or len(crossing) != 4:
                 return None
             for edge in crossing:
@@ -332,19 +411,49 @@ class LinkDiagram:
             If the diagram is invalid.
         """
         subdiagrams: list[LinkDiagram] = []
-        for desired_edges in self.components_edges:
-            crossings = []
-            for v in self.crossings:
-                if all(e in desired_edges for e in v):
-                    crossings.append(v)
 
-            if crossings:
-                new_diagram = LinkDiagram(crossings)
-                if not new_diagram.is_valid():
-                    raise ValueError('cannot calculate components of an invalid diagram.')
-                subdiagrams.append(new_diagram)
-            else:
+        for desired_edges in self.components_edges:
+            edge_set = set(desired_edges)
+            self_crossings = [
+                v for v in self.crossings if all(e in edge_set for e in v)
+            ]
+
+            if not self_crossings:
                 subdiagrams.append(self._UNKNOT)
+                continue
+
+            # Collect every edge that *enters* a self-crossing:
+            # - c[0] is always the incoming under-strand
+            # - For the over-strand (c[1], c[3]), whichever edge satisfies
+            #   _next(edge) == other is the incoming over-strand.
+            self_incoming: set[Edge] = set()
+            for c in self_crossings:
+                self_incoming.add(c[0])
+                self_incoming.add(c[1] if self._next(c[1]) == c[3] else c[3])
+
+            # Start at the edge immediately after an incoming edge (guaranteed exit)
+            start = self._next(next(iter(self_incoming)))
+
+            edge_map: dict[Edge, Edge] = {}
+            curr = start
+            label = 1
+            for _ in range(len(desired_edges)):
+                edge_map[curr] = label
+                if curr in self_incoming:
+                    label += 1
+                curr = self._next(curr)
+
+            comp_pd = [
+                (
+                    edge_map[c[0]],
+                    edge_map[c[1]],
+                    edge_map[c[2]],
+                    edge_map[c[3]],
+                )
+                for c in self_crossings
+            ]
+            subdiagrams.append(LinkDiagram(comp_pd).normalize())
+
         return tuple(subdiagrams)
 
     @property
@@ -364,7 +473,18 @@ class LinkDiagram:
         return len(self.components_edges)
 
     @property
-    def crossings(self) -> tuple[tuple[Edge, ...], ...]:
+    def pd_code(self) -> PDNotation:
+        """Return the internally stored planar diagram code.
+        
+        Returns
+        -------
+        PDNotation
+            The planar diagram code..
+        """
+        return self._pd_code
+
+    @property
+    def crossings(self) -> tuple[Crossing, ...]:
         """Return edge labels grouped by crossing incidence.
 
         Returns
@@ -372,7 +492,7 @@ class LinkDiagram:
         tuple of tuple of Edge
             Each inner tuple contains the labels incident to one crossing.
         """
-        return tuple(self.pd_code)
+        return tuple(self._pd_code)
 
     @property
     def n_crossings(self) -> int:
@@ -388,7 +508,7 @@ class LinkDiagram:
         ValueError
             If the diagram is invalid.
         """
-        return len(self.pd_code)
+        return len(self._pd_code)
 
     def is_valid(self) -> bool:
         """Check the structural validity of the PD code.
@@ -403,7 +523,7 @@ class LinkDiagram:
 
     def _get_crossings_with_edge(self, edge: Edge) -> list[Crossing]:
         """Get a list of all crossings that are adjacent to a given edge."""
-        return [crossing for crossing in self.pd_code if edge in crossing]
+        return [crossing for crossing in self._pd_code if edge in crossing]
 
     def _next(self, edge: Edge) -> Edge:
         """Get the edge after a given edge (+1 with wraparound)."""
@@ -421,32 +541,32 @@ class LinkDiagram:
         The second 2 is in the second crossing in the third position, so it has the index (2, 3).
         Thus, diagram._get_friend_index(1, 4) = (2, 3) and diagram._get_friend_index(2, 3) = (1, 4).
         """
-        edge = self.pd_code[crossing_index][edge_index]
+        edge = self._pd_code[crossing_index][edge_index]
         crossings_with_edge = self._get_crossings_with_edge(edge)
         
         if len(crossings_with_edge) == 1:
-            pos = [i for i, row in enumerate(self.pd_code[crossing_index]) if row == edge]
+            pos = [i for i, row in enumerate(self._pd_code[crossing_index]) if row == edge]
             return (crossing_index, pos[1] if pos[0] == edge_index else pos[0])
         
-        if crossings_with_edge[0] == self.pd_code[crossing_index]:
-            return (next(i for i, row in enumerate(self.pd_code) if row == crossings_with_edge[1]), next(i for i, x in enumerate(crossings_with_edge[1]) if x == edge))
+        if crossings_with_edge[0] == self._pd_code[crossing_index]:
+            return (next(i for i, row in enumerate(self._pd_code) if row == crossings_with_edge[1]), next(i for i, x in enumerate(crossings_with_edge[1]) if x == edge))
 
-        return (next(i for i, row in enumerate(self.pd_code) if row == crossings_with_edge[0]), next(i for i, x in enumerate(crossings_with_edge[0]) if x == edge))
+        return (next(i for i, row in enumerate(self._pd_code) if row == crossings_with_edge[0]), next(i for i, x in enumerate(crossings_with_edge[0]) if x == edge))
 
     def _shift_unbounded(self, n: int) -> LinkDiagram:
         """Return a diagram with all of its edge values shifted up by `n` without wrapping around.
 
         This method is meant for adjusting a diagram to be combined with another.
         """
-        return LinkDiagram([tuple(edge + n for edge in crossing) for crossing in self.pd_code])
+        return LinkDiagram([tuple(edge + n for edge in crossing) for crossing in self._pd_code])
 
     def _index_is_facing(self, crossing_index: int, edge_index: int) -> bool:
         """Returns whether or not the given index represents an edge that is facing its crossing."""
         if edge_index == 0: return True
         if edge_index == 1:
-            return self.pd_code[crossing_index][3] == self._next(self.pd_code[crossing_index][1])
+            return self._pd_code[crossing_index][3] == self._next(self._pd_code[crossing_index][1])
         if edge_index == 3:
-            return self.pd_code[crossing_index][1] == self._next(self.pd_code[crossing_index][3])
+            return self._pd_code[crossing_index][1] == self._next(self._pd_code[crossing_index][3])
         return False
 
     def _get_forth_index(self, edge: Edge) -> tuple[int, int]:
@@ -455,7 +575,7 @@ class LinkDiagram:
         Note: the edge index is never 2, since the edge would then be
         facing away from the crossing.
         """
-        for crossing_index, crossing in enumerate(self.pd_code):
+        for crossing_index, crossing in enumerate(self._pd_code):
             if crossing[0] == edge:
                 return crossing_index, 0
             if crossing[1] == edge and crossing[3] == self._next(edge):
@@ -479,18 +599,18 @@ class LinkDiagram:
         # Generate the counterclockwise face.
         crossing_index, edge_index = self._get_forth_index(edge)
         edge_index = (edge_index - 1) % 4
-        while self.pd_code[crossing_index][edge_index] != edge:
+        while self._pd_code[crossing_index][edge_index] != edge:
             sign = -1 if self._index_is_facing(crossing_index, edge_index) else 1
-            face_ccw.append(sign * self.pd_code[crossing_index][edge_index])
+            face_ccw.append(sign * self._pd_code[crossing_index][edge_index])
             crossing_index, edge_index = self._get_friend_index(crossing_index, edge_index)
             edge_index = (edge_index - 1) % 4
         
         # Generate the clockwise face.
         crossing_index, edge_index = self._get_forth_index(edge)
         edge_index = (edge_index + 1) % 4
-        while self.pd_code[crossing_index][edge_index] != edge:
+        while self._pd_code[crossing_index][edge_index] != edge:
             sign = -1 if self._index_is_facing(crossing_index, edge_index) else 1
-            face_cw.append(sign * self.pd_code[crossing_index][edge_index])
+            face_cw.append(sign * self._pd_code[crossing_index][edge_index])
             crossing_index, edge_index = self._get_friend_index(crossing_index, edge_index)
             edge_index = (edge_index + 1) % 4
 
@@ -501,7 +621,7 @@ class LinkDiagram:
         
         An edge is closed if, on both of the crossings it connects to, it crosses underneath.
         """
-        adj_crossings = [crossing for crossing in self.pd_code if edge in crossing]
+        adj_crossings = [crossing for crossing in self._pd_code if edge in crossing]
         return all(edge in [crossing[0], crossing[2]] for crossing in adj_crossings)
 
     def _is_open(self, edge: Edge) -> bool:
@@ -509,7 +629,7 @@ class LinkDiagram:
         
         An edge is open if, on both of the crossings it connects to, it crosses over.
         """
-        adj_crossings = [crossing for crossing in self.pd_code if edge in crossing]
+        adj_crossings = [crossing for crossing in self._pd_code if edge in crossing]
         return all(edge in [crossing[1], crossing[3]] for crossing in adj_crossings)
 
     def _is_half_open(self, edge: Edge) -> bool:
@@ -527,4 +647,4 @@ class LinkDiagram:
         str
             The diagram in Mathematica planar-diagram notation.
         """
-        return 'PD[' + ','.join(['X[' + ','.join([str(edge) for edge in crossing]) + ']' for crossing in self.pd_code]) + ']'
+        return 'PD[' + ','.join(['X[' + ','.join([str(edge) for edge in crossing]) + ']' for crossing in self._pd_code]) + ']'

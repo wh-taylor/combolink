@@ -423,3 +423,26 @@ SOLOMONS_KNOT = LinkDiagram([(2, 8, 3, 7), (4, 6, 1, 5), (6, 2, 7, 1), (8, 4, 5,
 
 # https://en.wikipedia.org/wiki/Whitehead_link
 WHITEHEAD_LINK = LinkDiagram([(2, 6, 3, 5), (4, 8, 5, 9), (6, 7, 1, 10), (7, 2, 8, 1), (9, 3, 10, 4)])
+
+TREFOIL_UNKNOT_LINK = LinkDiagram(
+    [
+        (2, 7, 3, 8),
+        (4, 1, 5, 2),
+        (6, 9, 7, 10),
+        (8, 3, 1, 4),
+        (9, 6, 10, 5),
+    ]
+)
+
+DOUBLE_TREFOIL_LINK = LinkDiagram(
+    [
+        (2, 8, 3, 7),
+        (4, 12, 5, 13),
+        (6, 2, 7, 1),
+        (8, 6, 1, 5),
+        (10, 15, 11, 16),
+        (11, 3, 12, 4),
+        (14, 9, 15, 10),
+        (16, 13, 9, 14),
+    ]
+)

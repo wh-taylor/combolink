@@ -22,6 +22,8 @@ from .catalog import (
     BORROMEAN_RINGS,
     SOLOMONS_KNOT,
     WHITEHEAD_LINK,
+    DOUBLE_TREFOIL_LINK,
+    TREFOIL_UNKNOT_LINK,
     first_n_knots,
     knot,
     torus_knot,

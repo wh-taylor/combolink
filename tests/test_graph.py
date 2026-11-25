@@ -106,4 +106,4 @@ def test_to_graph_rejects_non_spherical_crossing_rotations():
 def test_to_graph_rejects_invalid_diagrams():
     # Empty PD codes are not valid LinkDiagram instances.
     with pytest.raises(ValueError, match="invalid"):
-        to_graph(LinkDiagram([]))
+        to_graph(LinkDiagram([1, 1, 1, 1]))

@@ -39,7 +39,7 @@ def test_moves_and_move_kinds_have_readable_representations():
 
 def test_apply_move_rejects_invalid_diagram_and_out_of_range_edges():
     with pytest.raises(ValueError, match="invalid diagram"):
-        apply_move(LinkDiagram([]), Move(MoveKind.UNTWIST, (1,)))
+        apply_move(LinkDiagram([1, 1, 1, 1]), Move(MoveKind.UNTWIST, (1,)))
 
     with pytest.raises(ValueError, match="belong to the diagram"):
-        apply_move(knot(3, 1), Move(MoveKind.UNTWIST, (7,)))
+        apply_move(TREFOIL, Move(MoveKind.UNTWIST, (7,)))

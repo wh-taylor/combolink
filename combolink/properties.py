@@ -23,9 +23,9 @@ def _require_valid_diagram(self: LinkDiagram) -> None:
 def _component_encounters(self: LinkDiagram) -> list[list[tuple[int, bool]]]:
     """Return ``(crossing_id, is_over)`` encounters in component order."""
     _require_valid_diagram(self)
-    components = self.components
+    components = self.components_edges
     ports_by_edge: dict[Edge, list[tuple[int, int]]] = {}
-    for crossing_index, crossing in enumerate(self.pd_code):
+    for crossing_index, crossing in enumerate(self.crossings):
         for position, edge in enumerate(crossing):
             ports_by_edge.setdefault(edge, []).append((crossing_index, position))
 
@@ -41,7 +41,7 @@ def _component_encounters(self: LinkDiagram) -> list[list[tuple[int, bool]]]:
         (crossing_index, position): other_port[
             (crossing_index, (position + 2) % 4)
         ]
-        for crossing_index in range(len(self.pd_code))
+        for crossing_index in range(len(self.crossings))
         for position in range(4)
     }
 
@@ -56,7 +56,7 @@ def _component_encounters(self: LinkDiagram) -> list[list[tuple[int, bool]]]:
         while port not in visited_ports:
             visited_ports.add(port)
             crossing_index, position = port
-            visited_edges.append(self.pd_code[crossing_index][position])
+            visited_edges.append(self.crossings[crossing_index][position])
             encounters.append((crossing_index + 1, position in (1, 3)))
             port = next_port[port]
 
@@ -178,11 +178,12 @@ def kauffman_bracket(self: LinkDiagram) -> Polynomial:
     ValueError
         If ``self`` is not a valid diagram.
     """
+    if self.n_crossings == 0: raise ValueError('cannot compute Kauffman bracket polynomial of the empty link')
     _require_valid_diagram(self)
     if self == UNKNOT: return Polynomial({-3: -1})
     if self == ~UNKNOT: return Polynomial({3: -1})
 
-    factored_poly = [(((a, d), (b, c)), ((a, b), (c, d))) for a, b, c, d in self.pd_code]
+    factored_poly = [(((a, d), (b, c)), ((a, b), (c, d))) for a, b, c, d in self.crossings]
 
     distributed_poly = [(sum(1-2*i for i in ii), [factor for term in terms for factor in term]) for ii, terms in zip(product(*(range(2) for _ in factored_poly)), product(*factored_poly))]
 
@@ -248,7 +249,7 @@ def get_writhe(self: LinkDiagram) -> int:
     if self == ~UNKNOT: return -1
 
     writhe = 0
-    for _, b, _, d in self.pd_code:
+    for _, b, _, d in self.crossings:
         if self._next(b) == d:
             writhe -= 1
         else:
@@ -292,7 +293,7 @@ def get_edges(self: LinkDiagram) -> list[Edge]:
     list of Edge
         The integer labels from one through twice the crossing count.
     """
-    return [i + 1 for i in range(2 * len(self.pd_code))]
+    return [i + 1 for i in range(2 * len(self.crossings))]
 
 def get_plaintext_code(self: LinkDiagram) -> str:
     """Serialize a diagram as a compact semicolon-delimited PD code.
@@ -308,9 +309,9 @@ def get_plaintext_code(self: LinkDiagram) -> str:
         The crossing list in the library's plaintext format.
     """
     output = '['
-    for i, (a, b, c, d) in enumerate(self.pd_code):
+    for i, (a, b, c, d) in enumerate(self.crossings):
         output += f'[{a};{b};{c};{d}]'
-        if i != len(self.pd_code) - 1:
+        if i != len(self.crossings) - 1:
             output += ';'
     output += ']'
     return output

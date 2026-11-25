@@ -10,7 +10,7 @@ def test_diagram_equality_with_non_diagram_objects():
 
 def test_diagram_validity():
     assert LinkDiagram([(1, 2, 2, 1)]).is_valid()
-    assert not LinkDiagram([]).is_valid()
+    assert not LinkDiagram([1, 1, 1, 1]).is_valid()
     assert not LinkDiagram([(1, 2, 2, 3)]).is_valid()
     assert not LinkDiagram([(1, 2, 2)]).is_valid()
 
@@ -20,7 +20,7 @@ def test_link_components_are_derived_from_pd_code():
 
     assert hopf_link.is_valid()
     assert hopf_link.n_components == 2
-    assert hopf_link.components == ((1, 2), (3, 4))
+    assert hopf_link.components_edges == ((1, 2), (3, 4))
 
 
 def test_unlink_components_use_single_crossing_unknot_forms():
@@ -28,6 +28,6 @@ def test_unlink_components_use_single_crossing_unknot_forms():
 
     assert unlink.is_valid()
     assert unlink.n_components == 2
-    assert unlink.components == ((1, 2), (3, 4))
+    assert unlink.components_edges == ((1, 2), (3, 4))
     assert reverse(unlink).n_components == 2
     assert reflect(unlink).n_components == 2

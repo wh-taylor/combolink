@@ -1,11 +1,8 @@
 from tests.__init__ import *
 
 
-HOPF_LINK = LinkDiagram([(1, 4, 2, 3), (3, 2, 4, 1)])
-
-
 def test_disjoint_union_relabels_edges_and_preserves_components():
-    first = knot(3, 1)
+    first = TREFOIL
     second = HOPF_LINK
 
     union = disjoint_union(first, second)
@@ -22,7 +19,7 @@ def test_disjoint_union_relabels_edges_and_preserves_components():
 
 def test_join_merges_only_the_selected_components():
     first = HOPF_LINK
-    second = knot(3, 1)
+    second = TREFOIL
 
     joined = join(first, second, 1, 1)
 
@@ -30,12 +27,12 @@ def test_join_merges_only_the_selected_components():
     assert joined.n_components == first.n_components + second.n_components - 1
     assert len(joined.pd_code) == len(first.pd_code) + len(second.pd_code)
     assert first == HOPF_LINK
-    assert second == knot(3, 1)
+    assert second == TREFOIL
 
 
 def test_join_works_for_every_edge_pair_in_hopf_link_and_trefoil():
     first = HOPF_LINK
-    second = knot(3, 1)
+    second = TREFOIL
 
     for self_edge in range(1, 2 * len(first.pd_code) + 1):
         for other_edge in range(1, 2 * len(second.pd_code) + 1):
@@ -48,8 +45,8 @@ def test_join_works_for_every_edge_pair_in_hopf_link_and_trefoil():
 
 
 def test_connected_sum_accepts_generic_knot_diagrams():
-    composite_knot = join(knot(3, 1), knot(3, 1), 1, 1)
-    other_knot = knot(4, 1)
+    composite_knot = join(TREFOIL, TREFOIL, 1, 1)
+    other_knot = FIGURE_EIGHT
 
     result = connected_sum(composite_knot, other_knot)
 
@@ -60,12 +57,12 @@ def test_connected_sum_accepts_generic_knot_diagrams():
 
 def test_connected_sum_rejects_link_diagrams():
     with pytest.raises(ValueError, match="requires knot diagrams"):
-        connected_sum(HOPF_LINK, knot(3, 1))
+        connected_sum(HOPF_LINK, TREFOIL)
 
 
 def test_join_rejects_edges_outside_their_diagrams():
     with pytest.raises(ValueError, match="self_edge"):
-        join(knot(3, 1), knot(4, 1), 0, 1)
+        join(TREFOIL, FIGURE_EIGHT, 0, 1)
 
     with pytest.raises(ValueError, match="other_edge"):
-        join(knot(3, 1), knot(4, 1), 1, 9)
+        join(TREFOIL, FIGURE_EIGHT, 1, 9)
