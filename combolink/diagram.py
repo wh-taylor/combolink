@@ -177,10 +177,10 @@ class LinkDiagram:
         return self.components[key]
 
     def __contains__(self, other: LinkDiagram) -> bool:
-        return any(other == sublink for sublink in self.sublinks)
+        return other in self.sublinks
 
     def __le__(self, other: LinkDiagram) -> bool:
-        return all(sublink in other for sublink in self.sublinks)
+        return self in other
 
     def __lt__(self, other: LinkDiagram) -> bool:
         return self <= other and self != other
@@ -197,11 +197,15 @@ class LinkDiagram:
         except ValueError:
             return hash(self.crossings)
 
-    def __rshift__(self, n: int) -> LinkDiagram:
-        return self.shift(n)
+    def __rshift__(self, n: object) -> LinkDiagram:
+        if isinstance(n, int): return self.shift(n)
+        if isinstance(n, tuple): return self.shift(*n)
+        return NotImplemented
 
-    def __lshift__(self, n: int) -> LinkDiagram:
-        return self.shift(-n)
+    def __lshift__(self, n: object) -> LinkDiagram:
+        if isinstance(n, int): return self.shift(-n)
+        if isinstance(n, tuple): return self.shift(*(-i for i in n))
+        return NotImplemented
 
     def __pos__(self) -> LinkDiagram:
         return self.normalize()
